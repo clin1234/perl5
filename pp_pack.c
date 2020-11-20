@@ -804,8 +804,6 @@ first_symbol(const char *pat, const char *patend) {
 
 /*
 
-=head1 Pack and Unpack
-
 =for apidoc unpackstring
 
 The engine implementing the C<unpack()> Perl function.
@@ -1808,7 +1806,7 @@ S_unpack_rec(pTHX_ tempsym_t* symptr, const char *s, const char *strbeg, const c
 	    }
 	    else {
 		if (checksum < bits_in_uv) {
-		    UV mask = ((UV)1 << checksum) - 1;
+		    UV mask = nBIT_MASK(checksum);
 		    cuv &= mask;
 		}
 		sv = newSVuv(cuv);

@@ -1675,10 +1675,10 @@ The EXPR can be arbitrarily complicated provided its
 final operation is an element or slice of an aggregate:
 
     delete $ref->[$x][$y]{$key};
-    delete @{$ref->[$x][$y]}{$key1, $key2, @morekeys};
+    delete $ref->[$x][$y]->@{$key1, $key2, @morekeys};
 
     delete $ref->[$x][$y][$index];
-    delete @{$ref->[$x][$y]}[$index1, $index2, @moreindices];
+    delete $ref->[$x][$y]->@[$index1, $index2, @moreindices];
 
 =item die LIST
 X<die> X<throw> X<exception> X<raise> X<$@> X<abort>
@@ -3585,6 +3585,20 @@ respectively.  POSITION and the return value are based at zero.
 If the substring is not found, L<C<index>|/index STR,SUBSTR,POSITION>
 returns -1.
 
+Find characters or strings:
+
+    index("Perl is great", "P");     # Returns 0
+    index("Perl is great", "g");     # Returns 8
+    index("Perl is great", "great"); # Also returns 8
+
+Attempting to find something not there:
+
+    index("Perl is great", "Z");     # Returns -1 (not found)
+
+Using an offset to find the I<second> occurrence:
+
+    index("Perl is great", "e", 5);  # Returns 10
+
 =item int EXPR
 X<int> X<integer> X<truncate> X<trunc> X<floor>
 
@@ -4419,8 +4433,8 @@ X<oct> X<octal> X<hex> X<hexadecimal> X<binary> X<bin>
 =for Pod::Functions convert a string to an octal number
 
 Interprets EXPR as an octal string and returns the corresponding
-value.  (If EXPR happens to start off with C<0x>, interprets it as a
-hex string.  If EXPR starts off with C<0b>, it is interpreted as a
+value.  (If EXPR happens to start off with C<0x> or C<x>, interprets it as a
+hex string.  If EXPR starts off with C<0b> or C<b>, it is interpreted as a
 binary string.  Leading whitespace is ignored in all three cases.)
 The following will handle decimal, binary, octal, and hex in standard
 Perl notation:
@@ -5842,7 +5856,7 @@ symbol table the compiler uses for the rest of that block.  You can refer to
 identifiers in other packages than the current one by prefixing the identifier
 with the package name and a double colon, as in C<$SomePack::var>
 or C<ThatPack::INPUT_HANDLE>.  If package name is omitted, the C<main>
-package as assumed.  That is, C<$::sail> is equivalent to
+package is assumed.  That is, C<$::sail> is equivalent to
 C<$main::sail> (as well as to C<$main'sail>, still seen in ancient
 code, mostly from Perl 4).
 
@@ -6957,7 +6971,7 @@ is the moral equivalent of these two:
     print(uc($bar), $baz);
 
 See L<perlop> for more details on unary operators and the comma operator,
-and L<perldata> for details on evaluating a hash in scalar contex.
+and L<perldata> for details on evaluating a hash in scalar context.
 
 =item seek FILEHANDLE,POSITION,WHENCE
 X<seek> X<fseek> X<filehandle, position>
@@ -7389,6 +7403,14 @@ X<sleep> X<pause>
 Causes the script to sleep for (integer) EXPR seconds, or forever if no
 argument is given.  Returns the integer number of seconds actually slept.
 
+EXPR should be a positive integer. If called with a negative integer,
+L<C<sleep>|/sleep EXPR> does not sleep but instead emits a warning, sets
+$! (C<errno>), and returns zero.
+
+C<sleep 0> is permitted, but a function call to the underlying platform
+implementation still occurs, with any side effects that may have.
+C<sleep 0> is therefore not exactly identical to not sleeping at all.
+
 May be interrupted if the process receives a signal such as C<SIGALRM>.
 
     eval {
@@ -7818,7 +7840,7 @@ pattern argument to split; in Perl 5.18.0 and later this special case is
 triggered by any expression which evaluates to the simple string S<C<" ">>.
 
 As of Perl 5.28, this special-cased whitespace splitting works as expected in
-the scope of L<< S<C<"use feature 'unicode_strings">>|feature/The
+the scope of L<< S<C<"use feature 'unicode_strings'">>|feature/The
 'unicode_strings' feature >>. In previous versions, and outside the scope of
 that feature, it exhibits L<perlunicode/The "Unicode Bug">: characters that are
 whitespace according to Unicode rules but not according to ASCII rules can be
@@ -7841,10 +7863,9 @@ produces the output C<abc>, and this:
 
     print join(':', split(//, 'abc', 2)), "\n";
 
-produces the output C<a:bc>, and each of these:
+produces the output C<a:bc>, and this:
 
     print join(':', split(//, 'abc', 3)), "\n";
-    print join(':', split(//, 'abc', 4)), "\n";
 
 produces the output C<a:b:c>.
 

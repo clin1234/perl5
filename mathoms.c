@@ -50,7 +50,7 @@
  *
  * Some blurb for perlapi.pod:
 
-=head1 Obsolete backwards compatibility functions
+ head1 Obsolete backwards compatibility functions
 
 Some of these are also deprecated.  You can exclude these from
 your compiled Perl by adding this option to Configure:
@@ -85,6 +85,7 @@ Perl_ref(pTHX_ OP *o, I32 type)
 }
 
 /*
+=for apidoc_section $SV
 =for apidoc sv_unref
 
 Unsets the RV status of the SV, and decrements the reference count of
@@ -243,11 +244,11 @@ Perl_sv_force_normal(pTHX_ SV *sv)
  */
 
 void
-Perl_sv_setsv(pTHX_ SV *dstr, SV *sstr)
+Perl_sv_setsv(pTHX_ SV *dsv, SV *ssv)
 {
     PERL_ARGS_ASSERT_SV_SETSV;
 
-    sv_setsv_flags(dstr, sstr, SV_GMAGIC);
+    sv_setsv_flags(dsv, ssv, SV_GMAGIC);
 }
 
 /* sv_catpvn() is now a macro using Perl_sv_catpvn_flags();
@@ -262,20 +263,12 @@ Perl_sv_catpvn(pTHX_ SV *dsv, const char* sstr, STRLEN slen)
     sv_catpvn_flags(dsv, sstr, slen, SV_GMAGIC);
 }
 
-/*
-=for apidoc sv_catpvn_mg
-
-Like C<sv_catpvn>, but also handles 'set' magic.
-
-=cut
-*/
-
 void
-Perl_sv_catpvn_mg(pTHX_ SV *sv, const char *ptr, STRLEN len)
+Perl_sv_catpvn_mg(pTHX_ SV *dsv, const char *sstr, STRLEN len)
 {
     PERL_ARGS_ASSERT_SV_CATPVN_MG;
 
-    sv_catpvn_flags(sv,ptr,len,SV_GMAGIC|SV_SMAGIC);
+    sv_catpvn_flags(dsv,sstr,len,SV_GMAGIC|SV_SMAGIC);
 }
 
 /* sv_catsv() is now a macro using Perl_sv_catsv_flags();
@@ -283,27 +276,19 @@ Perl_sv_catpvn_mg(pTHX_ SV *sv, const char *ptr, STRLEN len)
  */
 
 void
-Perl_sv_catsv(pTHX_ SV *dstr, SV *sstr)
+Perl_sv_catsv(pTHX_ SV *dsv, SV *sstr)
 {
     PERL_ARGS_ASSERT_SV_CATSV;
 
-    sv_catsv_flags(dstr, sstr, SV_GMAGIC);
+    sv_catsv_flags(dsv, sstr, SV_GMAGIC);
 }
 
-/*
-=for apidoc sv_catsv_mg
-
-Like C<sv_catsv>, but also handles 'set' magic.
-
-=cut
-*/
-
 void
-Perl_sv_catsv_mg(pTHX_ SV *dsv, SV *ssv)
+Perl_sv_catsv_mg(pTHX_ SV *dsv, SV *sstr)
 {
     PERL_ARGS_ASSERT_SV_CATSV_MG;
 
-    sv_catsv_flags(dsv,ssv,SV_GMAGIC|SV_SMAGIC);
+    sv_catsv_flags(dsv,sstr,SV_GMAGIC|SV_SMAGIC);
 }
 
 /*
@@ -605,6 +590,7 @@ Perl_gv_efullname3(pTHX_ SV *sv, const GV *gv, const char *prefix)
 }
 
 /*
+=for apidoc_section $GV
 =for apidoc gv_fetchmethod
 
 See L</gv_fetchmethod_autoload>.
@@ -702,6 +688,7 @@ Perl_is_utf8_string_loc(const U8 *s, const STRLEN len, const U8 **ep)
 }
 
 /*
+=for apidoc_section $SV
 =for apidoc sv_nolocking
 
 Dummy routine which "locks" an SV when there is no locking module present.
@@ -819,6 +806,7 @@ Perl_sv_usepvn(pTHX_ SV *sv, char *ptr, STRLEN len)
 }
 
 /*
+=for apidoc_section $pack
 =for apidoc unpack_str
 
 The engine implementing C<unpack()> Perl function.  Note: parameters C<strbeg>,
@@ -846,7 +834,7 @@ Perl_unpack_str(pTHX_ const char *pat, const char *patend, const char *s,
 
 The engine implementing C<pack()> Perl function.  Note: parameters
 C<next_in_list> and C<flags> are not used.  This call should not be used; use
-C<packlist> instead.
+C<L</packlist>> instead.
 
 =cut
 */
@@ -1115,6 +1103,7 @@ Perl_sv_2bool(pTHX_ SV *const sv)
 
 
 /*
+=for apidoc_section $custom
 =for apidoc custom_op_name
 Return the name for a given custom op.  This was once used by the C<OP_NAME>
 macro, but is no longer: it has only been kept for compatibility, and
@@ -1149,9 +1138,9 @@ Perl_newSUB(pTHX_ I32 floor, OP *o, OP *proto, OP *block)
 }
 
 SV *
-Perl_sv_mortalcopy(pTHX_ SV *const oldstr)
+Perl_sv_mortalcopy(pTHX_ SV *const oldsv)
 {
-    return Perl_sv_mortalcopy_flags(aTHX_ oldstr, SV_GMAGIC);
+    return Perl_sv_mortalcopy_flags(aTHX_ oldsv, SV_GMAGIC);
 }
 
 void
@@ -1177,6 +1166,7 @@ ASCII_TO_NEED(const UV enc, const UV ch)
 }
 
 /*
+=for apidoc_section $unicode
 =for apidoc is_utf8_char
 
 Tests if some arbitrary number of bytes begins in a valid UTF-8
@@ -1288,7 +1278,7 @@ Perl_instr(const char *big, const char *little)
 {
     PERL_ARGS_ASSERT_INSTR;
 
-    return instr((char *) big, (char *) little);
+    return instr(big, little);
 }
 
 SV *

@@ -38,14 +38,11 @@ static const char unees[] =
                         "Malformed UTF-8 character (unexpected end of string)";
 
 /*
-=head1 Unicode Support
 These are various utility functions for manipulating UTF8-encoded
 strings.  For the uninitiated, this is a method of representing arbitrary
 Unicode characters as a variable number of bytes, in such a way that
 characters in the ASCII range are unmodified, and a zero byte never appears
 within non-zero characters.
-
-=cut
 */
 
 /* helper for Perl__force_out_malformed_utf8_message(). Like
@@ -493,7 +490,7 @@ different extension.  For these reasons, there is a separate set of flags that
 can warn and/or disallow these extremely high code points, even if other
 above-Unicode ones are accepted.  They are the C<UNICODE_WARN_PERL_EXTENDED>
 and C<UNICODE_DISALLOW_PERL_EXTENDED> flags.  For more information see
-L</C<UTF8_GOT_PERL_EXTENDED>>.  Of course C<UNICODE_DISALLOW_SUPER> will
+C<L</UTF8_GOT_PERL_EXTENDED>>.  Of course C<UNICODE_DISALLOW_SUPER> will
 treat all above-Unicode code points, including these, as malformations.  (Note
 that the Unicode standard considers anything above 0x10FFFF to be illegal, but
 there are standards predating it that allow up to 0x7FFF_FFFF (2**31 -1))
@@ -504,6 +501,21 @@ C<UNICODE_DISALLOW_ABOVE_31_BIT> is usable instead of the more accurately named
 C<UNICODE_DISALLOW_PERL_EXTENDED>.  The names are misleading because on EBCDIC
 platforms,these flags can apply to code points that actually do fit in 31 bits.
 The new names accurately describe the situation in all cases.
+
+=for apidoc Amnh||UNICODE_DISALLOW_ABOVE_31_BIT
+=for apidoc Amnh||UNICODE_DISALLOW_ILLEGAL_C9_INTERCHANGE
+=for apidoc Amnh||UNICODE_DISALLOW_ILLEGAL_INTERCHANGE
+=for apidoc Amnh||UNICODE_DISALLOW_NONCHAR
+=for apidoc Amnh||UNICODE_DISALLOW_PERL_EXTENDED
+=for apidoc Amnh||UNICODE_DISALLOW_SUPER
+=for apidoc Amnh||UNICODE_DISALLOW_SURROGATE
+=for apidoc Amnh||UNICODE_WARN_ABOVE_31_BIT
+=for apidoc Amnh||UNICODE_WARN_ILLEGAL_C9_INTERCHANGE
+=for apidoc Amnh||UNICODE_WARN_ILLEGAL_INTERCHANGE
+=for apidoc Amnh||UNICODE_WARN_NONCHAR
+=for apidoc Amnh||UNICODE_WARN_PERL_EXTENDED
+=for apidoc Amnh||UNICODE_WARN_SUPER
+=for apidoc Amnh||UNICODE_WARN_SURROGATE
 
 =cut
 */
@@ -1260,7 +1272,7 @@ different extension.  For these reasons, there is a separate set of flags that
 can warn and/or disallow these extremely high code points, even if other
 above-Unicode ones are accepted.  They are the C<UTF8_WARN_PERL_EXTENDED> and
 C<UTF8_DISALLOW_PERL_EXTENDED> flags.  For more information see
-L</C<UTF8_GOT_PERL_EXTENDED>>.  Of course C<UTF8_DISALLOW_SUPER> will treat all
+C<L</UTF8_GOT_PERL_EXTENDED>>.  Of course C<UTF8_DISALLOW_SUPER> will treat all
 above-Unicode code points, including these, as malformations.
 (Note that the Unicode standard considers anything above 0x10FFFF to be
 illegal, but there are standards predating it that allow up to 0x7FFF_FFFF
@@ -1393,7 +1405,7 @@ C<UTF8_DISALLOW_NONCHAR> or the C<UTF8_WARN_NONCHAR> flags.
 
 The input sequence was malformed in that a non-continuation type byte was found
 in a position where only a continuation type one should be.  See also
-L</C<UTF8_GOT_SHORT>>.
+C<L</UTF8_GOT_SHORT>>.
 
 =item C<UTF8_GOT_OVERFLOW>
 
@@ -1453,6 +1465,17 @@ C<UTF8_DISALLOW_SURROGATE> or the C<UTF8_WARN_SURROGATE> flags.
 To do your own error handling, call this function with the C<UTF8_CHECK_ONLY>
 flag to suppress any warnings, and then examine the C<*errors> return.
 
+=for apidoc Amnh||UTF8_GOT_PERL_EXTENDED
+=for apidoc Amnh||UTF8_GOT_CONTINUATION
+=for apidoc Amnh||UTF8_GOT_EMPTY
+=for apidoc Amnh||UTF8_GOT_LONG
+=for apidoc Amnh||UTF8_GOT_NONCHAR
+=for apidoc Amnh||UTF8_GOT_NON_CONTINUATION
+=for apidoc Amnh||UTF8_GOT_OVERFLOW
+=for apidoc Amnh||UTF8_GOT_SHORT
+=for apidoc Amnh||UTF8_GOT_SUPER
+=for apidoc Amnh||UTF8_GOT_SURROGATE
+
 =cut
 
 Also implemented as a macro in utf8.h
@@ -1481,7 +1504,7 @@ directly.
 This function is for code that needs to know what the precise malformation(s)
 are when an error is found, and wants the corresponding warning and/or error
 messages to be returned to the caller rather than be displayed.  All messages
-that would have been displayed if all lexcial warnings are enabled will be
+that would have been displayed if all lexical warnings are enabled will be
 returned.
 
 It is just like C<L</utf8n_to_uvchr_error>> but it takes an extra parameter
@@ -2541,15 +2564,10 @@ Perl_bytes_from_utf8(pTHX_ const U8 *s, STRLEN *lenp, bool *is_utf8p)
 }
 
 /*
-=for comment
-skip apidoc
-This is not currently externally documented because we don't want people to use
-it for now.  XXX Perhaps that is too paranoid, and it should be documented?
-
 =for apidoc bytes_from_utf8_loc
 
-Like C<L</bytes_from_utf8>()>, but takes an extra parameter, a pointer to where
-to store the location of the first character in C<"s"> that cannot be
+Like C<L<perlapi/bytes_from_utf8>()>, but takes an extra parameter, a pointer
+to where to store the location of the first character in C<"s"> that cannot be
 converted to non-UTF8.
 
 If that parameter is C<NULL>, this function behaves identically to
@@ -2564,7 +2582,7 @@ C<"s">.  C<*lenp> is set to its length, not including the terminating C<NUL>.
 If the entire input string was converted, C<*is_utf8p> is set to a FALSE value,
 and C<*first_non_downgradable> is set to C<NULL>.
 
-Otherwise, C<*first_non_downgradable> set to point to the first byte of the
+Otherwise, C<*first_non_downgradable> is set to point to the first byte of the
 first character in the original string that wasn't converted.  C<*is_utf8p> is
 unchanged.  Note that the new string may have length 0.
 
@@ -2811,21 +2829,18 @@ Perl_utf16_to_utf8_reversed(pTHX_ U8* p, U8* d, Size_t bytelen, Size_t *newlen)
 bool
 Perl__is_uni_FOO(pTHX_ const U8 classnum, const UV c)
 {
-    dVAR;
     return _invlist_contains_cp(PL_XPosix_ptrs[classnum], c);
 }
 
 bool
 Perl__is_uni_perl_idcont(pTHX_ UV c)
 {
-    dVAR;
     return _invlist_contains_cp(PL_utf8_perl_idcont, c);
 }
 
 bool
 Perl__is_uni_perl_idstart(pTHX_ UV c)
 {
-    dVAR;
     return _invlist_contains_cp(PL_utf8_perl_idstart, c);
 }
 
@@ -2965,7 +2980,6 @@ Perl_to_uni_upper(pTHX_ UV c, U8* p, STRLEN *lenp)
      * The ordinal of the first character of the changed version is returned
      * (but note, as explained above, that there may be more.) */
 
-    dVAR;
     PERL_ARGS_ASSERT_TO_UNI_UPPER;
 
     if (c < 256) {
@@ -2978,7 +2992,6 @@ Perl_to_uni_upper(pTHX_ UV c, U8* p, STRLEN *lenp)
 UV
 Perl_to_uni_title(pTHX_ UV c, U8* p, STRLEN *lenp)
 {
-    dVAR;
     PERL_ARGS_ASSERT_TO_UNI_TITLE;
 
     if (c < 256) {
@@ -3018,7 +3031,6 @@ S_to_lower_latin1(const U8 c, U8* p, STRLEN *lenp, const char dummy)
 UV
 Perl_to_uni_lower(pTHX_ UV c, U8* p, STRLEN *lenp)
 {
-    dVAR;
     PERL_ARGS_ASSERT_TO_UNI_LOWER;
 
     if (c < 256) {
@@ -3100,7 +3112,6 @@ Perl__to_uni_fold_flags(pTHX_ UV c, U8* p, STRLEN *lenp, U8 flags)
      *	    FOLD_FLAGS_NOMIX_ASCII iff non-ASCII to ASCII folds are prohibited
      */
 
-    dVAR;
     PERL_ARGS_ASSERT__TO_UNI_FOLD_FLAGS;
 
     if (flags & FOLD_FLAGS_LOCALE) {
@@ -3205,7 +3216,6 @@ S_warn_on_first_deprecated_use(pTHX_ const char * const name,
 bool
 Perl__is_utf8_FOO(pTHX_ const U8 classnum, const U8 *p, const U8 * const e)
 {
-    dVAR;
     PERL_ARGS_ASSERT__IS_UTF8_FOO;
 
     return is_utf8_common(p, e, PL_XPosix_ptrs[classnum]);
@@ -3214,7 +3224,6 @@ Perl__is_utf8_FOO(pTHX_ const U8 classnum, const U8 *p, const U8 * const e)
 bool
 Perl__is_utf8_perl_idstart(pTHX_ const U8 *p, const U8 * const e)
 {
-    dVAR;
     PERL_ARGS_ASSERT__IS_UTF8_PERL_IDSTART;
 
     return is_utf8_common(p, e, PL_utf8_perl_idstart);
@@ -3223,7 +3232,6 @@ Perl__is_utf8_perl_idstart(pTHX_ const U8 *p, const U8 * const e)
 bool
 Perl__is_utf8_perl_idcont(pTHX_ const U8 *p, const U8 * const e)
 {
-    dVAR;
     PERL_ARGS_ASSERT__IS_UTF8_PERL_IDCONT;
 
     return is_utf8_common(p, e, PL_utf8_perl_idcont);
@@ -3429,7 +3437,6 @@ Perl__inverse_folds(pTHX_ const UV cp, U32 * first_folds_to,
      * constructed with this size (to save space and memory), and we return
      * pointers, so they must be this size */
 
-    dVAR;
     /* 'index' is guaranteed to be non-negative, as this is an inversion map
      * that covers all possible inputs.  See [perl #133365] */
     SSize_t index = _invlist_search(PL_utf8_foldclosures, cp);
@@ -3575,7 +3582,6 @@ S_turkic_lc(pTHX_ const U8 * const p0, const U8 * const e,
      * sequence, and the entire sequence will be stored in *ustrp.  ustrp will
      * contain *lenp bytes */
 
-    dVAR;
     PERL_ARGS_ASSERT_TURKIC_LC;
     assert(e > p0);
 
@@ -3749,7 +3755,6 @@ Perl__to_utf8_upper_flags(pTHX_ const U8 *p,
                                 STRLEN *lenp,
                                 bool flags)
 {
-    dVAR;
     UV result;
 
     PERL_ARGS_ASSERT__TO_UTF8_UPPER_FLAGS;
@@ -3774,7 +3779,6 @@ Perl__to_utf8_title_flags(pTHX_ const U8 *p,
                                 STRLEN *lenp,
                                 bool flags)
 {
-    dVAR;
     UV result;
 
     PERL_ARGS_ASSERT__TO_UTF8_TITLE_FLAGS;
@@ -3797,7 +3801,6 @@ Perl__to_utf8_lower_flags(pTHX_ const U8 *p,
                                 STRLEN *lenp,
                                 bool flags)
 {
-    dVAR;
     UV result;
 
     PERL_ARGS_ASSERT__TO_UTF8_LOWER_FLAGS;
@@ -3824,7 +3827,6 @@ Perl__to_utf8_fold_flags(pTHX_ const U8 *p,
                                STRLEN *lenp,
                                U8 flags)
 {
-    dVAR;
     UV result;
 
     PERL_ARGS_ASSERT__TO_UTF8_FOLD_FLAGS;
@@ -4063,7 +4065,13 @@ The pointer to the PV of the C<dsv> is returned.
 
 See also L</sv_uni_display>.
 
-=cut */
+=for apidoc Amnh||UNI_DISPLAY_BACKSLASH
+=for apidoc Amnh||UNI_DISPLAY_BACKSPACE
+=for apidoc Amnh||UNI_DISPLAY_ISPRINT
+=for apidoc Amnh||UNI_DISPLAY_QQ
+=for apidoc Amnh||UNI_DISPLAY_REGEX
+=cut
+*/
 char *
 Perl_pv_uni_display(pTHX_ SV *dsv, const U8 *spv, STRLEN len, STRLEN pvlim,
                           UV flags)
@@ -4183,6 +4191,13 @@ For case-insensitiveness, the "casefolding" of Unicode is used
 instead of upper/lowercasing both the characters, see
 L<https://www.unicode.org/unicode/reports/tr21/> (Case Mappings).
 
+=for apidoc Cmnh||FOLDEQ_UTF8_NOMIX_ASCII
+=for apidoc Cmnh||FOLDEQ_LOCALE
+=for apidoc Cmnh||FOLDEQ_S1_ALREADY_FOLDED
+=for apidoc Cmnh||FOLDEQ_S1_FOLDS_SANE
+=for apidoc Cmnh||FOLDEQ_S2_ALREADY_FOLDED
+=for apidoc Cmnh||FOLDEQ_S2_FOLDS_SANE
+
 =cut */
 
 /* A flags parameter has been added which may change, and hence isn't
@@ -4212,6 +4227,7 @@ L<https://www.unicode.org/unicode/reports/tr21/> (Case Mappings).
  *                          string.
  *  FOLDEQ_S2_FOLDS_SANE
  */
+
 I32
 Perl_foldEQ_utf8_flags(pTHX_ const char *s1, char **pe1, UV l1, bool u1,
                              const char *s2, char **pe2, UV l2, bool u2,

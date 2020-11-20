@@ -11,7 +11,7 @@
 #define PP(s) OP * Perl_##s(pTHX)
 
 /*
-=head1 Stack Manipulation Macros
+=for apidoc_section $stack
 
 =for apidoc AmnU||SP
 Stack pointer.  This is usually handled by C<xsubpp>.  See C<L</dSP>> and
@@ -53,6 +53,16 @@ Refetch the stack pointer.  Used after a callback.  See L<perlcall>.
 #undef SP /* Solaris 2.7 i386 has this in /usr/include/sys/reg.h */
 #define SP sp
 #define MARK mark
+
+/*
+=for apidoc Amns||TARG
+
+C<TARG> is short for "target".  It is an entry in the pad that an OPs
+C<op_targ> refers to.  It is scratchpad space, often used as a return
+value for the OP, but some use it for other purposes.
+
+=cut
+*/
 #define TARG targ
 
 #define PUSHMARK(p) \
@@ -91,6 +101,13 @@ Refetch the stack pointer.  Used after a callback.  See L<perlcall>.
 #define dTARGETSTACKED SV * GETTARGETSTACKED
 
 #define GETTARGET targ = PAD_SV(PL_op->op_targ)
+
+/*
+=for apidoc Amns||dTARGET
+Declare that this function uses C<TARG>
+
+=cut
+*/
 #define dTARGET SV * GETTARGET
 
 #define GETATARGET targ = (PL_op->op_flags & OPf_STACKED ? sp[-1] : PAD_SV(PL_op->op_targ))
@@ -599,7 +616,7 @@ Does not use C<TARG>.  See also C<L</XPUSHu>>, C<L</mPUSHu>> and C<L</PUSHu>>.
                 SSize_t i;                                      \
                 SSize_t len;                                    \
                 assert(SvTYPE(tmpsv) == SVt_PVAV);              \
-                len = av_tindex((AV *)tmpsv) + 1;               \
+                len = av_count((AV *)tmpsv);                    \
                 (void)POPs; /* get rid of the arg */            \
                 EXTEND(sp, len);                                \
                 for (i = 0; i < len; ++i)                       \

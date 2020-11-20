@@ -147,8 +147,13 @@ SKIP: {
         # expect netware to be the same ...
         skip "No ctime concept on this OS", 2
                                      if $Is_MSWin32 || $ufs_no_ctime;
-
-        if( !ok($mtime, 'hard link mtime') ||
+        my $ok_mtime = ok($mtime, 'hard link mtime');
+        local our $TODO;
+        # https://bugs.dragonflybsd.org/issues/3251
+        # this might be hammer/hammer2 specific
+        $TODO = "DragonFly BSD doesn't touch ctime on link()/chmod"
+            if $^O eq "dragonfly" && $Config{myuname} =~ /5\.8/;
+        if(!$ok_mtime ||
             !isnt($mtime, $ctime, 'hard link ctime != mtime') ) {
             print STDERR <<DIAG;
 # Check if you are on a tmpfs of some sort.  Building in /tmp sometimes
@@ -299,6 +304,11 @@ SKIP: {
     $DEV =~ s{^.+?\s\..+?$}{}m;
     @DEV =  grep { ! m{^\..+$} } @DEV;
 
+    # sometimes files cannot be stat'd on cygwin, making inspecting pointless
+    # remove them from both @DEV and $DEV
+    @DEV = grep $DEV =~ s/^.\?{9}.*\s$_(?: -> .*)?$//m ? () : $_, @DEV
+      if $Is_Cygwin;
+
     # Irix ls -l marks sockets with 'S' while 's' is a 'XENIX semaphore'.
     if ($^O eq 'irix') {
         $DEV =~ s{^S(.+?)}{s$1}mg;
@@ -309,7 +319,8 @@ SKIP: {
 	my @c2 = eval qq[grep { $_[1] "/dev/\$_" } \@DEV];
 	my $c1 = scalar @c1;
 	my $c2 = scalar @c2;
-	is($c1, $c2, "ls and $_[1] agreeing on /dev ($c1 $c2)");
+	diag "= before", $DEV, "-", @DEV, "= after", @c1, "-", @c2, "="
+	  unless is($c1, $c2, "ls and $_[1] agreeing on /dev ($c1 $c2)");
     };
 
 {
