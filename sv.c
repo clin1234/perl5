@@ -2055,7 +2055,7 @@ S_sv_2iuv_non_preserve(pTHX_ SV *const sv
     (void)SvNOK_on(sv);
     /* Can't use strtol etc to convert this string.  (See truth table in
        sv_2iv  */
-    if (SvNVX(sv) <= (UV)IV_MAX) {
+    if (SvNVX(sv) < IV_MAX_P1) {
         SvIV_set(sv, I_V(SvNVX(sv)));
         if ((NV)(SvIVX(sv)) == SvNVX(sv)) {
             SvIOK_on(sv); /* Integer is precise. NOK, IOK */
@@ -5561,14 +5561,32 @@ Perl_sv_catsv_flags(pTHX_ SV *const dsv, SV *const sstr, const I32 flags)
 
 /*
 =for apidoc sv_catpv
+=for apidoc_item sv_catpv_flags
+=for apidoc_item sv_catpv_mg
+=for apidoc_item sv_catpv_nomg
 
-Concatenates the C<NUL>-terminated string C<sstr> onto the end of the string which is
-in the SV.
+These concatenate the C<NUL>-terminated string C<sstr> onto the end of the
+string which is in the SV.
 If the SV has the UTF-8 status set, then the bytes appended should be
-valid UTF-8.  Handles 'get' magic, but not 'set' magic.  See
-C<L</sv_catpv_mg>>.
+valid UTF-8.
 
-=cut */
+They differ only in how they handle magic:
+
+C<sv_catpv_mg> performs both 'get' and 'set' magic.
+
+C<sv_catpv> performs only 'get' magic.
+
+C<sv_catpv_nomg> skips all magic.
+
+C<sv_catpv_flags> has an extra C<flags> parameter which allows you to specify
+any combination of magic handling (using C<SV_GMAGIC> and/or C<SV_SMAGIC>), and
+to also override the UTF-8 handling.  By supplying the C<SV_CATUTF8> flag, the
+appended string is forced to be interpreted as UTF-8; by supplying instead the
+C<SV_CATBYTES> flag, it will be interpreted as just bytes.  Either the SV or
+the string appended will be upgraded to UTF-8 if necessary.
+
+=cut
+*/
 
 void
 Perl_sv_catpv(pTHX_ SV *const dsv, const char *sstr)
@@ -5592,32 +5610,12 @@ Perl_sv_catpv(pTHX_ SV *const dsv, const char *sstr)
     SvTAINT(dsv);
 }
 
-/*
-=for apidoc sv_catpv_flags
-
-Concatenates the C<NUL>-terminated string onto the end of the string which is
-in the SV.
-If the SV has the UTF-8 status set, then the bytes appended should
-be valid UTF-8.  If C<flags> has the C<SV_SMAGIC> bit set, will C<L</mg_set>>
-on the modified SV if appropriate.
-
-=cut
-*/
-
 void
 Perl_sv_catpv_flags(pTHX_ SV *dsv, const char *sstr, const I32 flags)
 {
     PERL_ARGS_ASSERT_SV_CATPV_FLAGS;
     sv_catpvn_flags(dsv, sstr, strlen(sstr), flags);
 }
-
-/*
-=for apidoc sv_catpv_mg
-
-Like C<sv_catpv>, but also handles 'set' magic.
-
-=cut
-*/
 
 void
 Perl_sv_catpv_mg(pTHX_ SV *const dsv, const char *const sstr)
@@ -8878,9 +8876,13 @@ Perl_sv_gets(pTHX_ SV *const sv, PerlIO *const fp, I32 append)
 
 /*
 =for apidoc sv_inc
+=for apidoc_item sv_inc_nomg
 
-Auto-increment of the value in the SV, doing string to numeric conversion
-if necessary.  Handles 'get' magic and operator overloading.
+These auto-increment the value in the SV, doing string to numeric conversion
+if necessary.  They both handle operator overloading.
+
+They differ only in that C<sv_inc> performs 'get' magic; C<sv_inc_nomg> skips
+any magic.
 
 =cut
 */
@@ -8893,15 +8895,6 @@ Perl_sv_inc(pTHX_ SV *const sv)
     SvGETMAGIC(sv);
     sv_inc_nomg(sv);
 }
-
-/*
-=for apidoc sv_inc_nomg
-
-Auto-increment of the value in the SV, doing string to numeric conversion
-if necessary.  Handles operator overloading.  Skips handling 'get' magic.
-
-=cut
-*/
 
 void
 Perl_sv_inc_nomg(pTHX_ SV *const sv)
@@ -9748,13 +9741,13 @@ Perl_newRV(pTHX_ SV *const sv)
 
 /*
 =for apidoc newSVsv
+=for apidoc_item newSVsv_nomg
 
-Creates a new SV which is an exact duplicate of the original SV.
+These create a new SV which is an exact duplicate of the original SV.
 (Uses C<sv_setsv>.)
 
-=for apidoc newSVsv_nomg
-
-Like C<newSVsv> but does not process get magic.
+They differ only in that C<newSVsv> performs 'get' magic; C<newSVsv_nomg> skips
+any magic.
 
 =cut
 */
@@ -10677,9 +10670,12 @@ Perl_sv_tainted(pTHX_ SV *const sv)
 
 /*
 =for apidoc sv_setpviv
+=for apidoc_item sv_setpviv_mg
 
-Copies an integer into the given SV, also updating its string value.
-Does not handle 'set' magic.  See C<L</sv_setpviv_mg>>.
+These copy an integer into the given SV, also updating its string value.
+
+They differ only in that C<sv_setpviv_mg> performs 'set' magic; C<sv_setpviv>
+skips any magic.
 
 =cut
 */
@@ -10700,14 +10696,6 @@ Perl_sv_setpviv(pTHX_ SV *const sv, const IV iv)
 
     sv_setpvn(sv, ptr, ebuf - ptr);
 }
-
-/*
-=for apidoc sv_setpviv_mg
-
-Like C<sv_setpviv>, but also handles 'set' magic.
-
-=cut
-*/
 
 void
 Perl_sv_setpviv_mg(pTHX_ SV *const sv, const IV iv)
@@ -10766,14 +10754,21 @@ Perl_sv_setpvf_mg_nocontext(SV *const sv, const char *const pat, ...)
 
 /*
 =for apidoc sv_setpvf
+=for apidoc_item sv_setpvf_nocontext
+=for apidoc_item sv_setpvf_mg
+=for apidoc_item sv_setpvf_mg_nocontext
 
-Works like C<sv_catpvf> but copies the text into the SV instead of
-appending it.  Does not handle 'set' magic.  See C<L</sv_setpvf_mg>>.
+These work like C<L</sv_catpvf>> but copy the text into the SV instead of
+appending it.
 
-=for apidoc sv_setpvf_nocontext
-Like C<L</sv_setpvf>> but does not take a thread context (C<aTHX>) parameter,
-so is used in situations where the caller doesn't already have the thread
-context.
+The differences between these are:
+
+C<sv_setpvf> and C<sv_setpvf_nocontext> do not handle 'set' magic;
+C<sv_setpvf_mg> and C<sv_setpvf_mg_nocontext> do.
+
+C<sv_setpvf_nocontext> and C<sv_setpvf_mg_nocontext> do not take a thread
+context (C<aTHX>) parameter, so are used in situations where the caller
+doesn't already have the thread context.
 
 =cut
 */
@@ -10792,11 +10787,16 @@ Perl_sv_setpvf(pTHX_ SV *const sv, const char *const pat, ...)
 
 /*
 =for apidoc sv_vsetpvf
+=for apidoc_item sv_vsetpvf_mg
 
-Works like C<sv_vcatpvf> but copies the text into the SV instead of
-appending it.  Does not handle 'set' magic.  See C<L</sv_vsetpvf_mg>>.
+These work like C<L</sv_vcatpvf>> but copy the text into the SV instead of
+appending it.
 
-Usually used via its frontend C<sv_setpvf>.
+They differ only in that C<sv_vsetpvf_mg> performs 'set' magic;
+C<sv_vsetpvf> skips all magic.
+
+They are usually used via their frontends, C<L</sv_setpvf>> and
+C<L</sv_setpvf_mg>>.
 
 =cut
 */
@@ -10809,19 +10809,6 @@ Perl_sv_vsetpvf(pTHX_ SV *const sv, const char *const pat, va_list *const args)
     sv_vsetpvfn(sv, pat, strlen(pat), args, NULL, 0, NULL);
 }
 
-/*
-=for apidoc sv_setpvf_mg
-
-Like C<sv_setpvf>, but also handles 'set' magic.
-
-=for apidoc sv_setpvf_mg_nocontext
-Like C<L</sv_setpvf_mg>>, but does not take a thread context (C<aTHX>)
-parameter, so is used in situations where the caller doesn't already have the
-thread context.
-
-=cut
-*/
-
 void
 Perl_sv_setpvf_mg(pTHX_ SV *const sv, const char *const pat, ...)
 {
@@ -10833,16 +10820,6 @@ Perl_sv_setpvf_mg(pTHX_ SV *const sv, const char *const pat, ...)
     sv_vsetpvf_mg(sv, pat, &args);
     va_end(args);
 }
-
-/*
-=for apidoc sv_vsetpvf_mg
-
-Like C<sv_vsetpvf>, but also handles 'set' magic.
-
-Usually used via its frontend C<sv_setpvf_mg>.
-
-=cut
-*/
 
 void
 Perl_sv_vsetpvf_mg(pTHX_ SV *const sv, const char *const pat, va_list *const args)
@@ -10895,23 +10872,31 @@ Perl_sv_catpvf_mg_nocontext(SV *const sv, const char *const pat, ...)
 
 /*
 =for apidoc sv_catpvf
+=for apidoc_item sv_catpvf_nocontext
+=for apidoc_item sv_catpvf_mg
+=for apidoc_item sv_catpvf_mg_nocontext
 
-Processes its arguments like C<sprintf>, and appends the formatted
-output to an SV.  As with C<sv_vcatpvfn> called with a non-null C-style
-variable argument list, argument reordering is not supported.
+These process their arguments like C<sprintf>, and append the formatted
+output to an SV.  As with C<sv_vcatpvfn>, argument reordering is not supporte
+when called with a non-null C-style variable argument list.
+
 If the appended data contains "wide" characters
 (including, but not limited to, SVs with a UTF-8 PV formatted with C<%s>,
 and characters >255 formatted with C<%c>), the original SV might get
-upgraded to UTF-8.  Handles 'get' magic, but not 'set' magic.  See
-C<L</sv_catpvf_mg>>.  If the original SV was UTF-8, the pattern should be
+upgraded to UTF-8.
+
+If the original SV was UTF-8, the pattern should be
 valid UTF-8; if the original SV was bytes, the pattern should be too.
 
-=for apidoc sv_catpvf_nocontext
-Like C<L</sv_catpvf>> but does not take a thread context (C<aTHX>) parameter,
-so is used in situations where the caller doesn't already have the thread
-context.
+All perform 'get' magic, but only C<sv_catpvf_mg> and C<sv_catpvf_mg_nocontext>
+perform 'set' magic.
 
-=cut */
+C<sv_catpvf_nocontext> and C<sv_catpvf_mg_nocontext> do not take a thread
+context (C<aTHX>) parameter, so are used in situations where the caller
+doesn't already have the thread context.
+
+=cut
+*/
 
 void
 Perl_sv_catpvf(pTHX_ SV *const sv, const char *const pat, ...)
@@ -10927,12 +10912,18 @@ Perl_sv_catpvf(pTHX_ SV *const sv, const char *const pat, ...)
 
 /*
 =for apidoc sv_vcatpvf
+=for apidoc_item sv_vcatpvf_mg
 
-Processes its arguments like C<sv_vcatpvfn> called with a non-null C-style
-variable argument list, and appends the formatted output
-to an SV.  Does not handle 'set' magic.  See C<L</sv_vcatpvf_mg>>.
+These process their arguments like C<sv_vcatpvfn> called with a non-null
+C-style variable argument list, and append the formatted output to C<sv>.
 
-Usually used via its frontend C<sv_catpvf>.
+They differ only in that C<sv_vcatpvf_mg> performs 'set' magic;
+C<sv_vcatpvf> skips 'set' magic.
+
+Both perform 'get' magic.
+
+They are usually accessed via their frontends C<L</sv_catpvf>> and
+C<L</sv_catpvf_mg>>.
 
 =cut
 */
@@ -10944,19 +10935,6 @@ Perl_sv_vcatpvf(pTHX_ SV *const sv, const char *const pat, va_list *const args)
 
     sv_vcatpvfn_flags(sv, pat, strlen(pat), args, NULL, 0, NULL, SV_GMAGIC|SV_SMAGIC);
 }
-
-/*
-=for apidoc sv_catpvf_mg
-
-Like C<sv_catpvf>, but also handles 'set' magic.
-
-=for apidoc sv_catpvf_mg_nocontext
-Like C<L</sv_catpvf_mg>> but does not take a thread context (C<aTHX>) parameter,
-so is used in situations where the caller doesn't already have the thread
-context.
-
-=cut
-*/
 
 void
 Perl_sv_catpvf_mg(pTHX_ SV *const sv, const char *const pat, ...)
@@ -10970,16 +10948,6 @@ Perl_sv_catpvf_mg(pTHX_ SV *const sv, const char *const pat, ...)
     SvSETMAGIC(sv);
     va_end(args);
 }
-
-/*
-=for apidoc sv_vcatpvf_mg
-
-Like C<sv_vcatpvf>, but also handles 'set' magic.
-
-Usually used via its frontend C<sv_catpvf_mg>.
-
-=cut
-*/
 
 void
 Perl_sv_vcatpvf_mg(pTHX_ SV *const sv, const char *const pat, va_list *const args)
@@ -11150,7 +11118,7 @@ S_F0convert(NV nv, char *const endbuf, STRLEN *const len)
     assert(!Perl_isinfnan(nv));
     if (neg)
 	nv = -nv;
-    if (nv != 0.0 && nv < UV_MAX) {
+    if (nv != 0.0 && nv < (NV) UV_MAX) {
 	char *p = endbuf;
 	uv = (UV)nv;
 	if (uv != nv) {

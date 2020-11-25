@@ -1196,7 +1196,7 @@ object type. Exposed to perl code via Internals::SvREADONLY().
 
 #  define SvMAGIC(sv)	(0 + *(assert_(SvTYPE(sv) >= SVt_PVMG) &((XPVMG*)  SvANY(sv))->xmg_u.xmg_magic))
 #  define SvSTASH(sv)	(0 + *(assert_(SvTYPE(sv) >= SVt_PVMG) &((XPVMG*)  SvANY(sv))->xmg_stash))
-#else
+#else   /* Below is not PERL_DEBUG_COW */
 # ifdef PERL_CORE
 #  define SvLEN(sv) (0 + ((XPV*) SvANY(sv))->xpv_len)
 # else
@@ -1277,7 +1277,7 @@ object type. Exposed to perl code via Internals::SvREADONLY().
 	    assert(SvTYPE(_svstash) >= SVt_PVMG);			\
 	    &(((XPVMG*) MUTABLE_PTR(SvANY(_svstash)))->xmg_stash);	\
 	  }))
-#  else
+#  else     /* Below is not DEBUGGING or can't use brace groups */
 #    define SvPVX(sv) ((sv)->sv_u.svu_pv)
 #    define SvCUR(sv) ((XPV*) SvANY(sv))->xpv_cur
 #    define SvIVX(sv) ((XPVIV*) SvANY(sv))->xiv_iv
@@ -1577,58 +1577,49 @@ Like C<SvPV> but doesn't set a length variable.
 Like C<SvPV_nolen> but doesn't process magic.
 
 =for apidoc Am|IV|SvIV|SV* sv
-Coerces the given SV to IV and returns it.  The returned value in many
+=for apidoc_item SvIVx
+=for apidoc_item SvIV_nomg
+
+These coerce the given SV to IV and return it.  The returned value in many
 circumstances will get stored in C<sv>'s IV slot, but not in all cases.  (Use
 C<L</sv_setiv>> to make sure it does).
 
-See C<L</SvIVx>> for a version which guarantees to evaluate C<sv> only once.
+C<SvIVx> is different from the others in that it is guaranteed to evaluate
+C<sv> exactly once; the others may evaluate it multiple times.  Only use this
+form if C<sv> is an expression with side effects, otherwise use the more
+efficient C<SvIV>.
 
-=for apidoc Am|IV|SvIV_nomg|SV* sv
-Like C<SvIV> but doesn't process magic.
-
-=for apidoc Am|IV|SvIVx|SV* sv
-Coerces the given SV to IV and returns it.  The returned value in many
-circumstances will get stored in C<sv>'s IV slot, but not in all cases.  (Use
-C<L</sv_setiv>> to make sure it does).
-
-This form guarantees to evaluate C<sv> only once.  Only use this if C<sv> is an
-expression with side effects, otherwise use the more efficient C<SvIV>.
+C<SvIV_nomg> is the same as C<SvIV>, but does not perform 'get' magic.
 
 =for apidoc Am|NV|SvNV|SV* sv
-Coerces the given SV to NV and returns it.  The returned value in many
+=for apidoc_item SvNVx
+=for apidoc_item SvNV_nomg
+
+These coerce the given SV to NV and return it.  The returned value in many
 circumstances will get stored in C<sv>'s NV slot, but not in all cases.  (Use
 C<L</sv_setnv>> to make sure it does).
 
-See C<L</SvNVx>> for a version which guarantees to evaluate C<sv> only once.
+C<SvNVx> is different from the others in that it is guaranteed to evaluate
+C<sv> exactly once; the others may evaluate it multiple times.  Only use this
+form if C<sv> is an expression with side effects, otherwise use the more
+efficient C<SvNV>.
 
-=for apidoc Am|NV|SvNV_nomg|SV* sv
-Like C<SvNV> but doesn't process magic.
-
-=for apidoc Am|NV|SvNVx|SV* sv
-Coerces the given SV to NV and returns it.  The returned value in many
-circumstances will get stored in C<sv>'s NV slot, but not in all cases.  (Use
-C<L</sv_setnv>> to make sure it does).
-
-This form guarantees to evaluate C<sv> only once.  Only use this if C<sv> is an
-expression with side effects, otherwise use the more efficient C<SvNV>.
+C<SvNV_nomg> is the same as C<SvNV>, but does not perform 'get' magic.
 
 =for apidoc Am|UV|SvUV|SV* sv
-Coerces the given SV to UV and returns it.  The returned value in many
+=for apidoc_item SvUVx
+=for apidoc_item SvUV_nomg
+
+These coerce the given SV to UV and return it.  The returned value in many
 circumstances will get stored in C<sv>'s UV slot, but not in all cases.  (Use
 C<L</sv_setuv>> to make sure it does).
 
-See C<L</SvUVx>> for a version which guarantees to evaluate C<sv> only once.
+C<SvUVx> is different from the others in that it is guaranteed to evaluate
+C<sv> exactly once; the others may evaluate it multiple times.  Only use this
+form if C<sv> is an expression with side effects, otherwise use the more
+efficient C<SvUV>.
 
-=for apidoc Am|UV|SvUV_nomg|SV* sv
-Like C<SvUV> but doesn't process magic.
-
-=for apidoc Am|UV|SvUVx|SV* sv
-Coerces the given SV to UV and returns it.  The returned value in many
-circumstances will get stored in C<sv>'s UV slot, but not in all cases.  (Use
-C<L</sv_setuv>> to make sure it does).
-
-This form guarantees to evaluate C<sv> only once.  Only use this if C<sv> is an
-expression with side effects, otherwise use the more efficient C<SvUV>.
+C<SvUV_nomg> is the same as C<SvUV>, but does not perform 'get' magic.
 
 =for apidoc Am|bool|SvTRUE|SV* sv
 Returns a boolean indicating whether Perl would evaluate the SV as true or
@@ -1716,9 +1707,6 @@ COW).
 =for apidoc Am|bool|SvIsCOW_shared_hash|SV* sv
 Returns a boolean indicating whether the SV is Copy-On-Write shared hash key
 scalar.
-
-=for apidoc Am|void|sv_catpv_nomg|SV* sv|const char* ptr
-Like C<sv_catpv> but doesn't process magic.
 
 =cut
 */
@@ -2236,6 +2224,13 @@ See also C<L</PL_sv_yes>> and C<L</PL_sv_no>>.
 #define isGV(sv) (SvTYPE(sv) == SVt_PVGV)
 /* If I give every macro argument a different name, then there won't be bugs
    where nested macros get confused. Been there, done that.  */
+/*
+=for apidoc Am|bool|isGV_with_GP|SV * sv
+Returns a boolean as to whether or not C<sv> is a GV with a pointer to a GP
+(glob pointer).
+
+=cut
+*/
 #define isGV_with_GP(pwadak) \
 	(((SvFLAGS(pwadak) & (SVp_POK|SVpgv_GP)) == SVpgv_GP)	\
 	&& (SvTYPE(pwadak) == SVt_PVGV || SvTYPE(pwadak) == SVt_PVLV))
@@ -2368,51 +2363,54 @@ Evaluates C<sv> more than once.  Sets C<len> to 0 if C<SvOOK(sv)> is false.
 
 #define newIO()	MUTABLE_IO(newSV_type(SVt_PVIO))
 
-#define SV_CONST(name) \
+#if defined(PERL_CORE) || defined(PERL_EXT)
+
+#  define SV_CONST(name) \
 	PL_sv_consts[SV_CONST_##name] \
 		? PL_sv_consts[SV_CONST_##name] \
 		: (PL_sv_consts[SV_CONST_##name] = newSVpv_share(#name, 0))
 
-#define SV_CONST_TIESCALAR 0
-#define SV_CONST_TIEARRAY 1
-#define SV_CONST_TIEHASH 2
-#define SV_CONST_TIEHANDLE 3
+#  define SV_CONST_TIESCALAR 0
+#  define SV_CONST_TIEARRAY 1
+#  define SV_CONST_TIEHASH 2
+#  define SV_CONST_TIEHANDLE 3
 
-#define SV_CONST_FETCH 4
-#define SV_CONST_FETCHSIZE 5
-#define SV_CONST_STORE 6
-#define SV_CONST_STORESIZE 7
-#define SV_CONST_EXISTS 8
+#  define SV_CONST_FETCH 4
+#  define SV_CONST_FETCHSIZE 5
+#  define SV_CONST_STORE 6
+#  define SV_CONST_STORESIZE 7
+#  define SV_CONST_EXISTS 8
 
-#define SV_CONST_PUSH 9
-#define SV_CONST_POP 10
-#define SV_CONST_SHIFT 11
-#define SV_CONST_UNSHIFT 12
-#define SV_CONST_SPLICE 13
-#define SV_CONST_EXTEND 14
+#  define SV_CONST_PUSH 9
+#  define SV_CONST_POP 10
+#  define SV_CONST_SHIFT 11
+#  define SV_CONST_UNSHIFT 12
+#  define SV_CONST_SPLICE 13
+#  define SV_CONST_EXTEND 14
 
-#define SV_CONST_FIRSTKEY 15
-#define SV_CONST_NEXTKEY 16
-#define SV_CONST_SCALAR 17
+#  define SV_CONST_FIRSTKEY 15
+#  define SV_CONST_NEXTKEY 16
+#  define SV_CONST_SCALAR 17
 
-#define SV_CONST_OPEN 18
-#define SV_CONST_WRITE 19
-#define SV_CONST_PRINT 20
-#define SV_CONST_PRINTF 21
-#define SV_CONST_READ 22
-#define SV_CONST_READLINE 23
-#define SV_CONST_GETC 24
-#define SV_CONST_SEEK 25
-#define SV_CONST_TELL 26
-#define SV_CONST_EOF 27
-#define SV_CONST_BINMODE 28
-#define SV_CONST_FILENO 29
-#define SV_CONST_CLOSE 30
+#  define SV_CONST_OPEN 18
+#  define SV_CONST_WRITE 19
+#  define SV_CONST_PRINT 20
+#  define SV_CONST_PRINTF 21
+#  define SV_CONST_READ 22
+#  define SV_CONST_READLINE 23
+#  define SV_CONST_GETC 24
+#  define SV_CONST_SEEK 25
+#  define SV_CONST_TELL 26
+#  define SV_CONST_EOF 27
+#  define SV_CONST_BINMODE 28
+#  define SV_CONST_FILENO 29
+#  define SV_CONST_CLOSE 30
 
-#define SV_CONST_DELETE 31
-#define SV_CONST_CLEAR 32
-#define SV_CONST_UNTIE 33
-#define SV_CONST_DESTROY 34
+#  define SV_CONST_DELETE 31
+#  define SV_CONST_CLEAR 32
+#  define SV_CONST_UNTIE 33
+#  define SV_CONST_DESTROY 34
+#endif
 
 #define SV_CONSTS_COUNT 35
 

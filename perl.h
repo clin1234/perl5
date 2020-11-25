@@ -135,6 +135,17 @@ Otherwise ends a section of code already begun by a C<L</START_EXTERN_C>>.
 #  endif
 #endif
 
+/*
+=for apidoc_section $concurrency
+=for apidoc AmU|void|dTHXa|PerlInterpreter * a
+On threaded perls, set C<pTHX> to C<a>; on unthreaded perls, do nothing
+
+=for apidoc AmU|void|dTHXoa|PerlInterpreter * a
+Now a synonym for C<L</dTHXa>>.
+
+=cut
+*/
+
 #ifdef PERL_IMPLICIT_CONTEXT
 #  ifndef MULTIPLICITY
 #    define MULTIPLICITY
@@ -2112,6 +2123,14 @@ typedef UVTYPE UV;
 #  define PTR2ul(p)	INT2PTR(unsigned long,p)	
 #endif
 
+/*
+=for apidoc_section Casting
+=for apidoc Cyh|type|NUM2PTR|type|int value
+You probably want to be using L<C</INT2PTR>> instead.
+
+=cut
+*/
+
 #define NUM2PTR(any,d)	(any)(PTRV)(d)
 #define PTR2IV(p)	INT2PTR(IV,p)
 #define PTR2UV(p)	INT2PTR(UV,p)
@@ -3751,7 +3770,13 @@ EXTERN_C int perl_tsa_mutex_unlock(perl_mutex* mutex)
 #define PNfARG(pn) (int)1, (UV)PadnameLEN(pn), (void *)PadnamePV(pn)
 
 #ifdef PERL_CORE
-/* not used; but needed for backward compatibility with XS code? - RMB */
+/* not used; but needed for backward compatibility with XS code? - RMB
+=for apidoc AmnD|const char *|UVf
+
+Obsolete form of C<UVuf>, which you should convert to instead use
+
+=cut
+*/
 #  undef UVf
 #elif !defined(UVf)
 #  define UVf UVuf

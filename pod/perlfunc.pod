@@ -4326,9 +4326,8 @@ X<msgsnd>
 
 Calls the System V IPC function msgsnd to send the message MSG to the
 message queue ID.  MSG must begin with the native long integer message
-type, be followed by the length of the actual message, and then finally
-the message itself.  This kind of packing can be achieved with
-C<pack("l! a*", $type, $message)>.  Returns true if successful,
+type, followed by the message itself.  This kind of packing can be achieved
+with C<pack("l! a*", $type, $message)>.  Returns true if successful,
 false on error.  See also L<perlipc/"SysV IPC"> and the documentation
 for L<C<IPC::SysV>|IPC::SysV> and L<C<IPC::Msg>|IPC::Msg>.
 
@@ -8222,6 +8221,11 @@ as supported by the compiler used to build Perl:
                5.14 or later
    z           interpret integer as C types "size_t" or
                "ssize_t" on Perl 5.14 or later
+
+Note that, in general, using the C<l> modifier (for example, when writing
+C<"%ld"> or C<"%lu"> instead of C<"%d"> and C<"%u">) is unnecessary
+when used from Perl code.  Moreover, it may be harmful, for example on
+Windows 64-bit where a long is 32-bits.
 
 As of 5.14, none of these raises an exception if they are not supported on
 your platform.  However, if warnings are enabled, a warning of the

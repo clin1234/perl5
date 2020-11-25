@@ -1579,7 +1579,7 @@ ApdO	|I32	|call_argv	|NN const char* sub_name|I32 flags|NN char** argv
 ApdO	|I32	|call_method	|NN const char* methname|I32 flags
 ApdO	|I32	|call_pv	|NN const char* sub_name|I32 flags
 ApdO	|I32	|call_sv	|NN SV* sv|volatile I32 flags
-Ap	|void	|despatch_signals
+Cp	|void	|despatch_signals
 Ap	|OP *	|doref		|NN OP *o|I32 type|bool set_op_ref
 ApdO	|SV*	|eval_pv	|NN const char* p|I32 croak_on_error
 ApdO	|I32	|eval_sv	|NN SV* sv|I32 flags
@@ -2700,7 +2700,7 @@ Ap	|void	|do_pmop_dump	|I32 level|NN PerlIO *file|NULLOK const PMOP *pm
 Ap	|void	|do_sv_dump	|I32 level|NN PerlIO *file|NULLOK SV *sv|I32 nest \
 				|I32 maxnest|bool dumpops|STRLEN pvlim
 Ap	|void	|magic_dump	|NULLOK const MAGIC *mg
-Ap	|void	|reginitcolors
+Cp	|void	|reginitcolors
 CpdRMb	|char*	|sv_2pv_nolen	|NN SV* sv
 CpdRMb	|char*	|sv_2pvutf8_nolen|NN SV* sv
 CpdRMb	|char*	|sv_2pvbyte_nolen|NN SV* sv
@@ -3418,7 +3418,7 @@ Apd	|CV*	|cv_clone	|NN CV* proto
 p	|CV*	|cv_clone_into	|NN CV* proto|NN CV *target
 pd	|void	|pad_fixup_inner_anons|NN PADLIST *padlist|NN CV *old_cv|NN CV *new_cv
 pdX	|void	|pad_push	|NN PADLIST *padlist|int depth
-ApbdRM	|HV*	|pad_compname_type|const PADOFFSET po
+ApbdDR	|HV*	|pad_compname_type|const PADOFFSET po
 AxpdRT	|PADNAME *|padnamelist_fetch|NN PADNAMELIST *pnl|SSize_t key
 Xop	|void	|padnamelist_free|NN PADNAMELIST *pnl
 Axpd	|PADNAME **|padnamelist_store|NN PADNAMELIST *pnl|SSize_t key \

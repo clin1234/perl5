@@ -45,7 +45,7 @@ INST_TOP	*= $(INST_DRV)\perl
 # versioned installation can be obtained by setting INST_TOP above to a
 # path that includes an arbitrary version string.
 #
-#INST_VER	*= \5.33.4
+#INST_VER	*= \5.33.5
 
 #
 # Comment this out if you DON'T want your perl installation to have
@@ -86,13 +86,6 @@ USE_ITHREADS	*= define
 # will auto-enable) USE_MULTI above.
 #
 USE_IMP_SYS	*= define
-
-#
-# Comment this out if you don't want to enable large file support for
-# some reason.  Should normally only be changed to maintain compatibility
-# with an older release of perl.
-#
-USE_LARGE_FILES	*= define
 
 #
 # Uncomment this if you're building a 32-bit perl and want 64-bit integers.
@@ -306,7 +299,6 @@ USE_SITECUST	*= undef
 USE_MULTI	*= undef
 USE_ITHREADS	*= undef
 USE_IMP_SYS	*= undef
-USE_LARGE_FILES	*= undef
 USE_64_BIT_INT	*= undef
 USE_LONG_DOUBLE	*= undef
 DEFAULT_INC_EXCLUDES_DOT *= undef
@@ -1156,7 +1148,6 @@ CFG_VARS	=					\
 		usemultiplicity=$(USE_MULTI)	~	\
 		use64bitint=$(USE_64_BIT_INT)	~	\
 		uselongdouble=$(USE_LONG_DOUBLE)	~	\
-		uselargefiles=$(USE_LARGE_FILES)	~	\
 		usesitecustomize=$(USE_SITECUST)	~	\
 		default_inc_excludes_dot=$(DEFAULT_INC_EXCLUDES_DOT)	~	\
 		LINK_FLAGS=$(LINK_FLAGS)	~	\
@@ -1279,9 +1270,6 @@ $(MINIDIR)\.exists : $(CFGH_TMPL)
 	@(echo.&& \
 	echo #ifndef _config_h_footer_&& \
 	echo #define _config_h_footer_&& \
-	echo #undef Off_t&& \
-	echo #undef LSEEKSIZE&& \
-	echo #undef Off_t_size&& \
 	echo #undef PTRSIZE&& \
 	echo #undef SSize_t&& \
 	echo #undef HAS_ATOLL&& \
@@ -1330,15 +1318,6 @@ $(MINIDIR)\.exists : $(CFGH_TMPL)
 	echo #define FILE_base^(fp^) PERLIO_FILE_base^(fp^)&& \
 	echo #define FILE_bufsiz^(fp^) ^(PERLIO_FILE_cnt^(fp^) + PERLIO_FILE_ptr^(fp^) - PERLIO_FILE_base^(fp^)^)&& \
 	echo #define I_STDBOOL)>> config.h
-.ENDIF
-.IF "$(USE_LARGE_FILES)"=="define"
-	@(echo #define Off_t $(INT64)&& \
-	echo #define LSEEKSIZE ^8&& \
-	echo #define Off_t_size ^8)>> config.h
-.ELSE
-	@(echo #define Off_t long&& \
-	echo #define LSEEKSIZE ^4&& \
-	echo #define Off_t_size ^4)>> config.h
 .ENDIF
 .IF "$(WIN64)"=="define"
 .IF "$(CCTYPE)" == "GCC"
@@ -1662,7 +1641,7 @@ utils: $(HAVEMINIPERL) ..\utils\Makefile
 	copy ..\README.tw       ..\pod\perltw.pod
 	copy ..\README.vos      ..\pod\perlvos.pod
 	copy ..\README.win32    ..\pod\perlwin32.pod
-	copy ..\pod\perldelta.pod ..\pod\perl5334delta.pod
+	copy ..\pod\perldelta.pod ..\pod\perl5335delta.pod
 	$(MINIPERL) -I..\lib $(PL2BAT) $(UTILS)
 	$(MINIPERL) -I..\lib ..\autodoc.pl ..
 	$(MINIPERL) -I..\lib ..\pod\perlmodlib.PL -q ..
@@ -1760,7 +1739,7 @@ distclean: realclean
 	-if exist $(LIBDIR)\Win32API rmdir /s /q $(LIBDIR)\Win32API
 	-if exist $(LIBDIR)\XS rmdir /s /q $(LIBDIR)\XS
 	-cd $(PODDIR) && del /f *.html *.bat roffitall \
-	    perl5334delta.pod perlaix.pod perlamiga.pod perlandroid.pod \
+	    perl5335delta.pod perlaix.pod perlamiga.pod perlandroid.pod \
 	    perlapi.pod perlbs2000.pod perlcn.pod perlcygwin.pod \
 	    perldos.pod perlfreebsd.pod perlhaiku.pod perlhpux.pod \
 	    perlhurd.pod perlintern.pod perlirix.pod perljp.pod perlko.pod \
