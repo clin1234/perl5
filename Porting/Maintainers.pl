@@ -383,7 +383,7 @@ use File::Glob qw(:case);
     },
 
     'Encode' => {
-        'DISTRIBUTION' => 'DANKOGAI/Encode-3.07.tar.gz',
+        'DISTRIBUTION' => 'DANKOGAI/Encode-3.08.tar.gz',
         'FILES'        => q[cpan/Encode],
         'EXCLUDED'     => [
             qw( t/whatwg-aliases.json
@@ -1080,6 +1080,11 @@ use File::Glob qw(:case);
                 t/000-load.t
                 t/lib/if.pm
                 ),
+        ],
+        'CUSTOMIZED'   => [
+             # https://github.com/Perl-Toolchain-Gang/Test-Harness/pull/103
+             # applied but not released
+             't/source.t'
         ],
     },
 

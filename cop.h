@@ -423,6 +423,32 @@ struct cop {
     U32		cop_features;
 };
 
+/*
+=for apidoc Am|const char *|CopFILE|const COP * c
+Returns the name of the file associated with the C<COP> C<c>
+
+=for apidoc Am|STRLEN|CopLINE|const COP * c
+Returns the line number in the source code associated with the C<COP> C<c>
+
+=for apidoc Am|AV *|CopFILEAV|const COP * c
+Returns the AV associated with the C<COP> C<c>
+
+=for apidoc Am|SV *|CopFILESV|const COP * c
+Returns the SV associated with the C<COP> C<c>
+
+=for apidoc Am|void|CopFILE_set|COP * c|const char * pv
+Makes C<pv> the name of the file associated with the C<COP> C<c>
+
+=for apidoc Am|GV *|CopFILEGV|const COP * c
+Returns the GV associated with the C<COP> C<c>
+
+=for apidoc CopFILEGV_set
+Available only on unthreaded perls.  Makes C<pv> the name of the file
+associated with the C<COP> C<c>
+
+=cut
+*/
+
 #ifdef USE_ITHREADS
 #  define CopFILE(c)		((c)->cop_file)
 #  define CopFILEGV(c)		(CopFILE(c) \
@@ -818,6 +844,9 @@ struct subst {
     void *	sbu_rxres;
     REGEXP *	sbu_rx;
 };
+
+#ifdef PERL_CORE
+
 #define sb_iters	cx_u.cx_subst.sbu_iters
 #define sb_maxiters	cx_u.cx_subst.sbu_maxiters
 #define sb_rflags	cx_u.cx_subst.sbu_rflags
@@ -831,7 +860,6 @@ struct subst {
 #define sb_rxres	cx_u.cx_subst.sbu_rxres
 #define sb_rx		cx_u.cx_subst.sbu_rx
 
-#ifdef PERL_CORE
 #  define CX_PUSHSUBST(cx) CXINC, cx = CX_CUR(),		        \
 	cx->blk_oldsaveix = oldsave,				        \
 	cx->sb_iters		= iters,				\
