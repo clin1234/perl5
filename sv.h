@@ -1631,24 +1631,33 @@ efficient C<SvUV>.
 
 C<SvUV_nomg> is the same as C<SvUV>, but does not perform 'get' magic.
 
-=for apidoc Am|bool|SvTRUE|SV* sv
-Returns a boolean indicating whether Perl would evaluate the SV as true or
-false.  See C<L</SvOK>> for a defined/undefined test.  Handles 'get' magic
-unless the scalar is already C<SvPOK>, C<SvIOK> or C<SvNOK> (the public, not the
-private flags).
+=for apidoc SvTRUE
+=for apidoc_item SvTRUEx
+=for apidoc_item SvTRUE_nomg
+=for apidoc_item SvTRUE_NN
+=for apidoc_item SvTRUE_nomg_NN
 
-As of Perl 5.32, this is guaranteed to evaluate C<sv> only once.  Prior to that
-release, use C<L</SvTRUEx>> for single evaluation.
+These return a boolean indicating whether Perl would evaluate the SV as true or
+false.  See C<L</SvOK>> for a defined/undefined test.
 
-=for apidoc Am|bool|SvTRUE_nomg|SV* sv
-Returns a boolean indicating whether Perl would evaluate the SV as true or
-false.  See C<L</SvOK>> for a defined/undefined test.  Does not handle 'get' magic.
+As of Perl 5.32, all are guaranteed to evaluate C<sv> only once.  Prior to that
+release, only C<SvTRUEx> guaranteed single evaluation; now C<SvTRUEx> is
+identical to C<SvTRUE>.
 
-=for apidoc Am|bool|SvTRUEx|SV* sv
-Identical to C<L</SvTRUE>>.  Prior to 5.32, they differed in that only this one
-was guaranteed to evaluate C<sv> only once; in 5.32 they both evaluated it
-once, but C<SvTRUEx> was slightly slower on some platforms; now they are
-identical.
+C<SvTRUE_nomg> and C<TRUE_nomg_NN> do not perform 'get' magic; the others do
+unless the scalar is already C<SvPOK>, C<SvIOK>, or C<SvNOK> (the public, not
+the private flags).
+
+C<SvTRUE_NN> is like C<L</SvTRUE>>, but C<sv> is assumed to be
+non-null (NN).  If there is a possibility that it is NULL, use plain
+C<SvTRUE>.
+
+C<SvTRUE_nomg_NN> is like C<L</SvTRUE_nomg>>, but C<sv> is assumed to be
+non-null (NN).  If there is a possibility that it is NULL, use plain
+C<SvTRUE_nomg>.
+
+C<SvTRUE_NN> is like C<SvTRUE>, but C<sv> is assumed to be non-null (NN).  If
+there is a possibility that it is NULL, use plain C<SvTRUE>.
 
 =for apidoc Am|char*|SvPVutf8_force|SV* sv|STRLEN len
 Like C<SvPV_force>, but converts C<sv> to UTF-8 first if necessary.
@@ -1855,25 +1864,9 @@ scalar.
 #define SvPVutf8x_force(sv, len) sv_pvutf8n_force(sv, &len)
 #define SvPVbytex_force(sv, len) sv_pvbyten_force(sv, &len)
 
-#define SvTRUE(sv)         Perl_SvTRUE(aTHX_ sv)
 #define SvTRUEx(sv)        SvTRUE(sv)
-#define SvTRUE_nomg(sv)    (LIKELY(sv) && SvTRUE_nomg_NN(sv))
-#define SvTRUE_NN(sv)      (SvGETMAGIC(sv), SvTRUE_nomg_NN(sv))
-#define SvTRUE_nomg_NN(sv) (SvTRUE_common(sv, sv_2bool_nomg(sv)))
-
-#define SvTRUE_common(sv,fallback) (			\
-      SvIMMORTAL_INTERP(sv)                             \
-        ? SvIMMORTAL_TRUE(sv)                           \
-    : !SvOK(sv)						\
-	? 0						\
-    : SvPOK(sv)						\
-	? SvPVXtrue(sv)					\
-    : SvIOK(sv)                			        \
-        ? (SvIVX(sv) != 0 /* cast to bool */)           \
-    : (SvROK(sv) && !(   SvOBJECT(SvRV(sv))             \
-                      && HvAMAGIC(SvSTASH(SvRV(sv)))))  \
-        ? TRUE                                          \
-    : (fallback))
+#define SvTRUEx_nomg(sv)   SvTRUE_nomg(sv)
+#define SvTRUE_nomg_NN(sv) SvTRUE_common(sv, TRUE)
 
 #if defined(PERL_USE_GCC_BRACE_GROUPS)
 
@@ -1887,7 +1880,6 @@ scalar.
 #  define SvPVutf8x(sv, len) ({SV *_sv = (sv); SvPVutf8(_sv, len); })
 #  define SvPVbytex(sv, len) ({SV *_sv = (sv); SvPVbyte(_sv, len); })
 #  define SvPVbytex_nolen(sv) ({SV *_sv = (sv); SvPVbyte_nolen(_sv); })
-#  define SvTRUEx_nomg(sv) ({SV *_sv = (sv); SvTRUE_nomg(_sv); })
 
 #else /* __GNUC__ */
 
@@ -1904,7 +1896,6 @@ scalar.
 #  define SvPVutf8x(sv, len) ((PL_Sv = (sv)), SvPVutf8(PL_Sv, len))
 #  define SvPVbytex(sv, len) ((PL_Sv = (sv)), SvPVbyte(PL_Sv, len))
 #  define SvPVbytex_nolen(sv) ((PL_Sv = (sv)), SvPVbyte_nolen(PL_Sv))
-#  define SvTRUEx_nomg(sv) ((PL_Sv = (sv)), SvTRUE_nomg(PL_Sv))
 #endif /* __GNU__ */
 
 #define SvPVXtrue(sv)	(					\
@@ -2103,7 +2094,7 @@ incremented.
 /* the following macros update any magic values this C<sv> is associated with */
 
 /*
-=for apidoc_section $magic
+=for apidoc_section $SV
 
 =for apidoc Am|void|SvGETMAGIC|SV* sv
 Invokes C<L</mg_get>> on an SV if it has 'get' magic.  For example, this
@@ -2117,18 +2108,21 @@ or a tied variable (it calls C<STORE>).  This macro evaluates its
 argument more than once.
 
 =for apidoc Am|void|SvSetSV|SV* dsv|SV* ssv
-Calls C<sv_setsv> if C<dsv> is not the same as C<ssv>.  May evaluate arguments
-more than once.  Does not handle 'set' magic on the destination SV.
+=for apidoc_item SvSetMagicSV
+=for apidoc_item SvSetSV_nosteal
+=for apidoc_item SvSetMagicSV_nosteal
 
-=for apidoc Am|void|SvSetSV_nosteal|SV* dsv|SV* ssv
-Calls a non-destructive version of C<sv_setsv> if C<dsv> is not the same as
-C<ssv>.  May evaluate arguments more than once.
+if C<dsv> is the same as C<ssv>, these do nothing.  Otherwise they all call
+some form of C<L</sv_setsv>>.  They may evaluate their arguments more than
+once.
 
-=for apidoc Am|void|SvSetMagicSV|SV* dsv|SV* ssv
-Like C<SvSetSV>, but does any set magic required afterwards.
+The only differences are:
 
-=for apidoc Am|void|SvSetMagicSV_nosteal|SV* dsv|SV* ssv
-Like C<SvSetSV_nosteal>, but does any set magic required afterwards.
+C<SvSetMagicSV> and C<SvSetMagicSV_nosteal> perform any required 'set' magic
+afterwards on the destination SV; C<SvSetSV> and C<SvSetSV_nosteal> do not.
+
+C<SvSetSV_nosteal> C<SvSetMagicSV_nosteal> call a non-destructive version of
+C<sv_setsv>.
 
 =for apidoc Am|void|SvSHARE|SV* sv
 Arranges for C<sv> to be shared between threads if a suitable module

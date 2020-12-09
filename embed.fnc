@@ -1401,7 +1401,7 @@ Ap	|I32	|my_fflush_all
 ATp	|Pid_t	|my_fork
 ATp	|void	|atfork_lock
 ATp	|void	|atfork_unlock
-ApMb	|I32	|my_lstat
+m	|I32	|my_lstat
 pX	|I32	|my_lstat_flags	|NULLOK const U32 flags
 #if ! defined(HAS_MEMRCHR) && (defined(PERL_CORE) || defined(PERL_EXT))
 EeiT	|void *	|my_memrchr	|NN const char * s|const char c|const STRLEN len
@@ -1412,7 +1412,7 @@ Ap	|PerlIO*|my_popen	|NN const char* cmd|NN const char* mode
 #endif
 Ap	|PerlIO*|my_popen_list	|NN const char* mode|int n|NN SV ** args
 Apd	|void	|my_setenv	|NULLOK const char* nam|NULLOK const char* val
-ApMb	|I32	|my_stat
+m	|I32	|my_stat
 pX	|I32	|my_stat_flags	|NULLOK const U32 flags
 Adfp	|char *	|my_strftime	|NN const char *fmt|int sec|int min|int hour|int mday|int mon|int year|int wday|int yday|int isdst
 : Used in pp_ctl.c
@@ -2727,6 +2727,10 @@ AiMdp	|void	|SvREFCNT_dec	|NULLOK SV *sv
 AiMdp	|void	|SvREFCNT_dec_NN|NN SV *sv
 AiTp	|void	|SvAMAGIC_on	|NN SV *sv
 AiTp	|void	|SvAMAGIC_off	|NN SV *sv
+Aipd	|bool	|SvTRUE		|NULLOK SV *sv
+Aipd	|bool	|SvTRUE_nomg	|NULLOK SV *sv
+Aipd	|bool	|SvTRUE_NN	|NN SV *sv
+Cip	|bool	|SvTRUE_common	|NN SV *sv|const bool sv_2bool_is_fallback
 : This is indirectly referenced by globals.c. This is somewhat annoying.
 p	|int	|magic_killbackrefs|NN SV *sv|NN MAGIC *mg
 Ap	|OP*	|newANONATTRSUB	|I32 floor|NULLOK OP *proto|NULLOK OP *attrs|NULLOK OP *block

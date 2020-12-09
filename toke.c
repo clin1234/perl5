@@ -11366,7 +11366,7 @@ Perl_scan_str(pTHX_ char *start, int keep_bracketed_quoted, int keep_delims, int
   \d(_?\d)*(\.(\d(_?\d)*)?)?[Ee][\+\-]?(\d(_?\d)*)	12 12.34 12.
   \.\d(_?\d)*[Ee][\+\-]?(\d(_?\d)*)			.34
   0b[01](_?[01])*                                       binary integers
-  0[0-7](_?[0-7])*                                      octal integers
+  0o?[0-7](_?[0-7])*                                    octal integers
   0x[0-9A-Fa-f](_?[0-9A-Fa-f])*                         hexadecimal integers
   0x[0-9A-Fa-f](_?[0-9A-Fa-f])*(?:\.\d*)?p[+-]?[0-9]+   hexadecimal floats
 
@@ -11422,6 +11422,7 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
     NV hexfp_mult = 1.0;
     UV high_non_zero = 0; /* highest digit */
     int non_zero_integer_digits = 0;
+    bool new_octal = FALSE;     /* octal with "0o" prefix */
 
     PERL_ARGS_ASSERT_SCAN_NUM;
 
@@ -11459,7 +11460,6 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
 		"",
 		"037777777777",
 		"0xffffffff" };
-	    const char *base, *Base, *max;
 
 	    /* check for hex */
 	    if (isALPHA_FOLD_EQ(s[1], 'x')) {
@@ -11478,16 +11478,17 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
 	    else {
 		shift = 3;
 		s++;
+                if (isALPHA_FOLD_EQ(*s, 'o')) {
+                    s++;
+                    just_zero = FALSE;
+                    new_octal = TRUE;
+                }
 	    }
 
 	    if (*s == '_') {
 		WARN_ABOUT_UNDERSCORE();
 	       lastub = s++;
 	    }
-
-	    base = bases[shift];
-	    Base = Bases[shift];
-	    max  = maxima[shift];
 
 	    /* read the rest of the number */
 	    for (;;) {
@@ -11552,7 +11553,7 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
 			    n = (NV) u;
 			    Perl_ck_warner_d(aTHX_ packWARN(WARN_OVERFLOW),
 					     "Integer overflow in %s number",
-					     base);
+                                             bases[shift]);
 			} else
 			    u = x | b;		/* add the digit to the end */
 		    }
@@ -11755,8 +11756,8 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
                 }
             }
 
-            if (shift != 3 && !has_digs) {
-                /* 0x or 0b with no digits, treat it as an error.
+            if (!just_zero && !has_digs) {
+                /* 0x, 0o or 0b with no digits, treat it as an error.
                    Originally this backed up the parse before the b or
                    x, but that has the potential for silent changes in
                    behaviour, like for: "0x.3" and "0x+$foo".
@@ -11766,7 +11767,7 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
                 if (*d) ++d; /* so the user sees the bad non-digit */
                 PL_bufptr = (char *)d; /* so yyerror reports the context */
                 yyerror(Perl_form(aTHX_ "No digits found for %s literal",
-                                  shift == 4 ? "hexadecimal" : "binary"));
+                                  bases[shift]));
                 PL_bufptr = oldbp;
             }
 
@@ -11774,7 +11775,8 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
 		if (n > 4294967295.0)
 		    Perl_ck_warner(aTHX_ packWARN(WARN_PORTABLE),
 				   "%s number > %s non-portable",
-				   Base, max);
+                                   Bases[shift],
+                                   new_octal ? "0o37777777777" : maxima[shift]);
 		sv = newSVnv(n);
 	    }
 	    else {
@@ -11782,7 +11784,8 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
 		if (u > 0xffffffff)
 		    Perl_ck_warner(aTHX_ packWARN(WARN_PORTABLE),
 				   "%s number > %s non-portable",
-				   Base, max);
+                                   Bases[shift],
+                                   new_octal ? "0o37777777777" : maxima[shift]);
 #endif
 		sv = newSVuv(u);
 	    }
@@ -11814,6 +11817,11 @@ Perl_scan_num(pTHX_ const char *start, YYSTYPE* lvalp)
                 s = start + 2;
                 break;
             case 3:
+                if (new_octal) {
+                    *d++ = 'o';
+                    s = start + 2;
+                    break;
+                }
                 s = start + 1;
                 break;
             case 1:

@@ -105,9 +105,7 @@ PERLVARI(G, mmap_page_size, IV, 0)
 #if defined(USE_ITHREADS)
 PERLVAR(G, hints_mutex, perl_mutex)    /* Mutex for refcounted he refcounting */
 PERLVAR(G, env_mutex, perl_mutex)      /* Mutex for accessing ENV */
-#  if ! defined(USE_THREAD_SAFE_LOCALE) || defined(TS_W32_BROKEN_LOCALECONV)
 PERLVAR(G, locale_mutex, perl_mutex)   /* Mutex related to locale handling */
-#  endif
 #  ifndef USE_THREAD_SAFE_LOCALE
 PERLVAR(G, lc_numeric_mutex, perl_mutex)   /* Mutex for switching LC_NUMERIC */
 #  endif
@@ -307,6 +305,3 @@ PERLVARI(G, strategy_socket,     int, 0)	/* doio.c */
 PERLVARI(G, strategy_accept,     int, 0)	/* doio.c */
 PERLVARI(G, strategy_pipe,       int, 0)	/* doio.c */
 PERLVARI(G, strategy_socketpair, int, 0)	/* doio.c */
-
-#ifdef PERL_IMPLICIT_CONTEXT
-#endif

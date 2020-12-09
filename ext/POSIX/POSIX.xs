@@ -2185,8 +2185,8 @@ localeconv()
 
         lcbuf = localeconv_l(cur);
 #  else
-        LOCALE_LOCK_V;  /* Prevent interference with other threads using
-                           localeconv() */
+        LOCALECONV_LOCK;    /* Prevent interference with other threads using
+                               localeconv() */
 #    ifdef TS_W32_BROKEN_LOCALECONV
         /* This is a workaround for a Windows bug prior to VS 15, in which
          * localeconv only looks at the global locale.  We toggle to the global
@@ -2271,7 +2271,7 @@ localeconv()
         Safefree(save_global);
         Safefree(save_thread);
 #    endif
-        LOCALE_UNLOCK_V;
+        LOCALECONV_UNLOCK;
 #  endif
         RESTORE_LC_NUMERIC();
 #endif  /* HAS_LOCALECONV */
@@ -3376,9 +3376,9 @@ mblen(s, n = ~0)
             memzero(&PL_mbrlen_ps, sizeof(PL_mbrlen_ps));
             RETVAL = 0;
 #else
-            LOCALE_LOCK;
+            MBLEN_LOCK;
             RETVAL = mblen(NULL, 0);
-            LOCALE_UNLOCK;
+            MBLEN_UNLOCK;
 #endif
         }
         else {  /* Not resetting state */
@@ -3398,9 +3398,9 @@ mblen(s, n = ~0)
 #else
                 /* Locking prevents races, but locales can be switched out
                  * without locking, so this isn't a cure all */
-                LOCALE_LOCK;
+                MBLEN_LOCK;
                 RETVAL = mblen(string, len);
-                LOCALE_UNLOCK;
+                MBLEN_UNLOCK;
 #endif
             }
         }
@@ -3427,9 +3427,9 @@ mbtowc(pwc, s, n = ~0)
             memzero(&PL_mbrtowc_ps, sizeof(PL_mbrtowc_ps));
             RETVAL = 0;
 #else
-            LOCALE_LOCK;
+            MBTOWC_LOCK;
             RETVAL = mbtowc(NULL, NULL, 0);
-            LOCALE_UNLOCK;
+            MBTOWC_UNLOCK;
 #endif
         }
         else {  /* Not resetting state */
@@ -3448,9 +3448,9 @@ mbtowc(pwc, s, n = ~0)
 #else
                 /* Locking prevents races, but locales can be switched out
                  * without locking, so this isn't a cure all */
-                LOCALE_LOCK;
+                MBTOWC_LOCK;
                 RETVAL = mbtowc(&wc, string, len);
-                LOCALE_UNLOCK;
+                MBTOWC_UNLOCK;
 #endif
                 if (RETVAL >= 0) {
                     sv_setiv_mg(pwc, wc);
@@ -3482,9 +3482,9 @@ wctomb(s, wchar)
              * But probably memzero would too */
             RETVAL = wcrtomb(NULL, L'\0', &PL_wcrtomb_ps);
 #else
-            LOCALE_LOCK;
+            WCTOMB_LOCK;
             RETVAL = wctomb(NULL, L'\0');
-            LOCALE_UNLOCK;
+            WCTOMB_UNLOCK;
 #endif
         }
         else {  /* Not resetting state */
@@ -3494,9 +3494,9 @@ wctomb(s, wchar)
 #else
             /* Locking prevents races, but locales can be switched out without
              * locking, so this isn't a cure all */
-            LOCALE_LOCK;
+            WCTOMB_LOCK;
             RETVAL = wctomb(buffer, wchar);
-            LOCALE_UNLOCK;
+            WCTOMB_UNLOCK;
 #endif
             if (RETVAL >= 0) {
                 sv_setpvn_mg(s, buffer, RETVAL);

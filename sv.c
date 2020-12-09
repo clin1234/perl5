@@ -3424,7 +3424,7 @@ Perl_sv_2bool_flags(pTHX_ SV *sv, I32 flags)
     if (SvNOK(sv) && !SvPOK(sv))
         return SvNVX(sv) != 0.0;
 
-    return SvTRUE_common(sv, isGV_with_GP(sv) ? 1 : 0);
+    return SvTRUE_common(sv, 0);
 }
 
 /*
@@ -14850,6 +14850,7 @@ Perl_ss_dup(pTHX_ PerlInterpreter *proto_perl, CLONE_PARAMS* param)
 	    ptr = POPPTR(ss,ix);
 	    TOPPTR(nss,ix) = any_dup(ptr, proto_perl);
 	    /* FALLTHROUGH */
+	case SAVEt_STRLEN_SMALL:
 	case SAVEt_INT_SMALL:
 	case SAVEt_I32_SMALL:
 	case SAVEt_I16:				/* I16 reference */

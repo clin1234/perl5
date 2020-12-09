@@ -1227,10 +1227,10 @@ S_emulate_setlocale(const int category,
  * correct locale for that thread.  Any operation that was locale-sensitive
  * would have to be changed so that it would look like this:
  *
- *      LOCALE_LOCK;
+ *      SETLOCALE_LOCK;
  *      setlocale to the correct locale for this operation
  *      do operation
- *      LOCALE_UNLOCK
+ *      SETLOCALE_UNLOCK
  *
  * This leaves the global locale in the most recently used operation's, but it
  * was locked long enough to get the result.  If that result is static, it
@@ -1323,7 +1323,7 @@ S_locking_setlocale(pTHX_
 
     /* It might be that this is called from an already-locked section of code.
      * We would have to detect and skip the LOCK/UNLOCK if so */
-    LOCALE_LOCK;
+    SETLOCALE_LOCK;
 
     curlocales[index] = savepv(my_setlocale(category, new_locale));
 
@@ -1345,7 +1345,7 @@ S_locking_setlocale(pTHX_
 
 #endif
 
-    LOCALE_UNLOCK;
+    SETLOCALE_UNLOCK;
 
     return curlocales[index];
 }
@@ -2620,8 +2620,7 @@ S_my_nl_langinfo(const int item, bool toggle)
 
 #if defined(HAS_NL_LANGINFO) /* nl_langinfo() is available.  */
 #  if   ! defined(HAS_THREAD_SAFE_NL_LANGINFO_L)      \
-     || ! defined(HAS_POSIX_2008_LOCALE)              \
-     || ! defined(HAS_DUPLOCALE)
+     || ! defined(HAS_POSIX_2008_LOCALE)
 
     /* Here, use plain nl_langinfo(), switching to the underlying LC_NUMERIC
      * for those items dependent on it.  This must be copied to a buffer before
@@ -2635,18 +2634,16 @@ S_my_nl_langinfo(const int item, bool toggle)
             STORE_LC_NUMERIC_FORCE_TO_UNDERLYING();
         }
 
-        LOCALE_LOCK;    /* Prevent interference from another thread executing
-                           this code section (the only call to nl_langinfo in
-                           the core) */
-
+        /* Prevent interference from another thread executing this code
+         * section. */
+        NL_LANGINFO_LOCK;
 
         /* Copy to a per-thread buffer, which is also one that won't be
          * destroyed by a subsequent setlocale(), such as the
          * RESTORE_LC_NUMERIC may do just below. */
         retval = save_to_buffer(nl_langinfo(item),
                                 &PL_langinfo_buf, &PL_langinfo_bufsize, 0);
-
-        LOCALE_UNLOCK;
+        NL_LANGINFO_UNLOCK;
 
         if (toggle) {
             RESTORE_LC_NUMERIC();
@@ -2820,8 +2817,8 @@ S_my_nl_langinfo(const int item, bool toggle)
                 /* We don't bother with localeconv_l() because any system that
                  * has it is likely to also have nl_langinfo() */
 
-                LOCALE_LOCK_V;    /* Prevent interference with other threads
-                                     using localeconv() */
+                LOCALECONV_LOCK;    /* Prevent interference with other threads
+                                       using localeconv() */
 
 #    ifdef TS_W32_BROKEN_LOCALECONV
 
@@ -2848,7 +2845,7 @@ S_my_nl_langinfo(const int item, bool toggle)
                     || ! lc->currency_symbol
                     || strEQ("", lc->currency_symbol))
                 {
-                    LOCALE_UNLOCK_V;
+                    LOCALECONV_UNLOCK;
                     return "";
                 }
 
@@ -2878,7 +2875,7 @@ S_my_nl_langinfo(const int item, bool toggle)
 
 #    endif
 
-                LOCALE_UNLOCK_V;
+                LOCALECONV_UNLOCK;
                 break;
 
 #    ifdef TS_W32_BROKEN_LOCALECONV
@@ -2951,8 +2948,8 @@ S_my_nl_langinfo(const int item, bool toggle)
                     STORE_LC_NUMERIC_FORCE_TO_UNDERLYING();
                 }
 
-                LOCALE_LOCK_V;    /* Prevent interference with other threads
-                                     using localeconv() */
+                LOCALECONV_LOCK;    /* Prevent interference with other threads
+                                       using localeconv() */
 
 #    ifdef TS_W32_BROKEN_LOCALECONV
 
@@ -3004,7 +3001,7 @@ S_my_nl_langinfo(const int item, bool toggle)
 
 #    endif
 
-                LOCALE_UNLOCK_V;
+                LOCALECONV_UNLOCK;
 
                 if (toggle) {
                     RESTORE_LC_NUMERIC();
@@ -3042,8 +3039,6 @@ S_my_nl_langinfo(const int item, bool toggle)
             case MON_5: case MON_6: case MON_7: case MON_8:
             case MON_9: case MON_10: case MON_11: case MON_12:
 
-                LOCALE_LOCK;
-
                 init_tm(&tm);   /* Precaution against core dumps */
                 tm.tm_sec = 30;
                 tm.tm_min = 30;
@@ -3053,7 +3048,6 @@ S_my_nl_langinfo(const int item, bool toggle)
                 tm.tm_mon = 0;
                 switch (item) {
                     default:
-                        LOCALE_UNLOCK;
                         Perl_croak(aTHX_
                                     "panic: %s: %d: switch case: %d problem",
                                        __FILE__, __LINE__, item);
@@ -3228,8 +3222,6 @@ S_my_nl_langinfo(const int item, bool toggle)
                  *
                  * wday was chosen because its range is all a single digit.
                  * Things like tm_sec have two digits as the minimum: '00' */
-
-                LOCALE_UNLOCK;
 
                 retval = PL_langinfo_buf;
 
@@ -4845,12 +4837,12 @@ Perl__is_cur_LC_category_utf8(pTHX_ int category)
 
 #      else
 
-            LOCALE_LOCK;
+            MBTOWC_LOCK;
             PERL_UNUSED_RESULT(mbtowc(&wc, NULL, 0));/* Reset any shift state */
             SETERRNO(0, 0);
             len = mbtowc(&wc, STR_WITH_LEN(REPLACEMENT_CHARACTER_UTF8));
             SAVE_ERRNO;
-            LOCALE_UNLOCK;
+            MBTOWC_UNLOCK;
 
 #      endif
 
@@ -5303,8 +5295,7 @@ Perl_my_strerror(pTHX_ const int errnum)
     }
 
 #  elif   defined(USE_POSIX_2008_LOCALE)                      \
-     &&   defined(HAS_STRERROR_L)                             \
-     &&   defined(HAS_DUPLOCALE)
+     &&   defined(HAS_STRERROR_L)
 
     /* This function is also trivial if we don't have to worry about thread
      * safety and have strerror_l(), as it handles the switch of locales so we
@@ -5359,13 +5350,14 @@ Perl_my_strerror(pTHX_ const int errnum)
      * same code at the same time.  (On thread-safe perls, the LOCK is a
      * no-op.)  Since this is the only place in core that changes LC_MESSAGES
      * (unless the user has called setlocale(), this works to prevent races. */
-    LOCALE_LOCK;
+    SETLOCALE_LOCK;
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log,
                             "my_strerror called with errnum %d\n", errnum));
     if (! within_locale_scope) {
         save_locale = do_setlocale_c(LC_MESSAGES, NULL);
         if (! save_locale) {
+            SETLOCALE_UNLOCK;
             Perl_croak(aTHX_
                  "panic: %s: %d: Could not find current LC_MESSAGES locale,"
                  " errno=%d\n", __FILE__, __LINE__, errno);
@@ -5395,15 +5387,16 @@ Perl_my_strerror(pTHX_ const int errnum)
     if (! within_locale_scope) {
         if (save_locale && ! locale_is_C) {
             if (! do_setlocale_c(LC_MESSAGES, save_locale)) {
+                SETLOCALE_UNLOCK;
                 Perl_croak(aTHX_
-                     "panic: %s: %d: setlocale restore failed, errno=%d\n",
-                             __FILE__, __LINE__, errno);
+                     "panic: %s: %d: setlocale restore to '%s' failed, errno=%d\n",
+                             __FILE__, __LINE__, save_locale, errno);
             }
             Safefree(save_locale);
         }
     }
 
-    LOCALE_UNLOCK;
+    SETLOCALE_UNLOCK;
 
 #  endif /* End of doesn't have strerror_l */
 #  ifdef DEBUGGING
