@@ -224,12 +224,11 @@ use File::Glob qw(:case);
     },
 
     'Config::Perl::V' => {
-        'DISTRIBUTION' => 'HMBRAND/Config-Perl-V-0.31.tgz',
+        'DISTRIBUTION' => 'HMBRAND/Config-Perl-V-0.33.tgz',
         'FILES'        => q[cpan/Config-Perl-V],
         'EXCLUDED'     => [qw(
 		examples/show-v.pl
 		)],
-        'CUSTOMIZED'   => [ qw(V.pm) ],
     },
 
     'constant' => {
@@ -453,7 +452,7 @@ use File::Glob qw(:case);
     },
 
     'ExtUtils::Install' => {
-        'DISTRIBUTION' => 'BINGOS/ExtUtils-Install-2.18.tar.gz',
+        'DISTRIBUTION' => 'BINGOS/ExtUtils-Install-2.20.tar.gz',
         'FILES'        => q[cpan/ExtUtils-Install],
         'EXCLUDED'     => [
             qw( t/lib/Test/Builder.pm
@@ -693,7 +692,7 @@ use File::Glob qw(:case);
     },
 
     'libnet' => {
-        'DISTRIBUTION' => 'SHAY/libnet-3.11.tar.gz',
+        'DISTRIBUTION' => 'SHAY/libnet-3.12.tar.gz',
         'FILES'        => q[cpan/libnet],
         'EXCLUDED'     => [
             qw( Configure
@@ -911,7 +910,7 @@ use File::Glob qw(:case);
     },
 
     'PerlIO::via::QuotedPrint' => {
-        'DISTRIBUTION' => 'SHAY/PerlIO-via-QuotedPrint-0.08.tar.gz',
+        'DISTRIBUTION' => 'SHAY/PerlIO-via-QuotedPrint-0.09.tar.gz',
         'FILES'        => q[cpan/PerlIO-via-QuotedPrint],
     },
 
@@ -1109,7 +1108,7 @@ use File::Glob qw(:case);
     },
 
     'Text::Balanced' => {
-        'DISTRIBUTION' => 'SHAY/Text-Balanced-2.03.tar.gz',
+        'DISTRIBUTION' => 'SHAY/Text-Balanced-2.04.tar.gz',
         'FILES'        => q[cpan/Text-Balanced],
         'EXCLUDED'     => [
             qw( t/97_meta.t

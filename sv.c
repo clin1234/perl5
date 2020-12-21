@@ -181,7 +181,7 @@ perl_destruct() to physically free all the arenas allocated since the
 start of the interpreter.
 
 The internal function visit() scans the SV arenas list, and calls a specified
-function for each SV it finds which is still live - ie which has an SvTYPE
+function for each SV it finds which is still live, I<i.e.> which has an SvTYPE
 other than all 1's, and a non-zero SvREFCNT. visit() is used by the
 following functions (specified as [function that calls visit()] / [function
 called by visit() for each SV]):
@@ -3271,8 +3271,8 @@ These copy a stringified representation of the source SV into the
 destination SV.  They automatically perform coercion of numeric values into
 strings.  Guaranteed to preserve the C<UTF8> flag even from overloaded objects.
 Similar in nature to C<sv_2pv[_flags]> but they operate directly on an SV
-instead of just the string.  Mostly they use C<L</sv_2pv_flags>> to do the
-work, except when that would lose the UTF-8'ness of the PV.
+instead of just the string.  Mostly they use L<perlintern/C<sv_2pv_flags>> to
+do the work, except when that would lose the UTF-8'ness of the PV.
 
 The three forms differ only in whether or not they perform 'get magic' on
 C<sv>.  C<sv_copypv_nomg> skips 'get magic'; C<sv_copypv> performs it; and
@@ -9742,12 +9742,14 @@ Perl_newRV(pTHX_ SV *const sv)
 /*
 =for apidoc newSVsv
 =for apidoc_item newSVsv_nomg
+=for apidoc_item newSVsv_flags
 
-These create a new SV which is an exact duplicate of the original SV.
-(Uses C<sv_setsv>.)
+These create a new SV which is an exact duplicate of the original SV
+(using C<sv_setsv>.)
 
 They differ only in that C<newSVsv> performs 'get' magic; C<newSVsv_nomg> skips
-any magic.
+any magic; and C<newSVsv_flags> allows you to explicitly set a C<flags>
+parameter.
 
 =cut
 */
@@ -15406,6 +15408,10 @@ perl_clone_using(PerlInterpreter *proto_perl, UV flags,
     PL_rpeepp		= proto_perl->Irpeepp;
     /* op_free() hook */
     PL_opfreehook	= proto_perl->Iopfreehook;
+
+#  ifdef PERL_MEM_LOG
+    Zero(PL_mem_log, sizeof(PL_mem_log), char);
+#  endif
 
 #ifdef USE_REENTRANT_API
     /* XXX: things like -Dm will segfault here in perlio, but doing

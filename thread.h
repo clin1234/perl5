@@ -288,48 +288,56 @@
 
 #  define PERL_READ_LOCK(mutex)                                     \
     STMT_START {                                                    \
-        MUTEX_LOCK(mutex.lock);                                     \
+        MUTEX_LOCK(&(mutex)->lock);                                 \
         (mutex)->readers_count++;                                   \
-        MUTEX_UNLOCK(mutex.lock);                                   \
+        MUTEX_UNLOCK(&(mutex)->lock);                               \
     } STMT_END
 
 #  define PERL_READ_UNLOCK(mutex)                                   \
     STMT_START {                                                    \
-        MUTEX_LOCK(mutex.lock);                                     \
+        MUTEX_LOCK(&(mutex)->lock);                                 \
         (mutex)->readers_count--;                                   \
         if ((mutex)->readers_count <= 0) {                          \
-            COND_SIGNAL(mutex.zero_readers);                        \
+            assert((mutex)->readers_count == 0);                    \
+            COND_SIGNAL(&(mutex)->wakeup);                          \
             (mutex)->readers_count = 0;                             \
         }                                                           \
-        MUTEX_UNLOCK(mutex.lock);                                   \
+        MUTEX_UNLOCK(&(mutex)->lock);                               \
     } STMT_END
 
 #  define PERL_WRITE_LOCK(mutex)                                    \
     STMT_START {                                                    \
-        MUTEX_LOCK(mutex.lock);                                     \
+        MUTEX_LOCK(&(mutex)->lock);                                 \
         do {                                                        \
-            if ((mutex)->readers_count == 0)                        \
+            if ((mutex)->readers_count <= 0) {                      \
+                assert((mutex)->readers_count == 0);                \
+                (mutex)->readers_count = 0;                         \
                 break;                                              \
-            COND_WAIT(mutex.zero_readers, mutex.lock);              \
+            }                                                       \
+            COND_WAIT(&(mutex)->wakeup, &(mutex)->lock);            \
         }                                                           \
         while (1);                                                  \
                                                                     \
         /* Here, the mutex is locked, with no readers */            \
     } STMT_END
 
-#  define PERL_WRITE_UNLOCK(mutex)  MUTEX_UNLOCK(mutex.lock)
+#  define PERL_WRITE_UNLOCK(mutex)                                  \
+    STMT_START {                                                    \
+        COND_SIGNAL(&(mutex)->wakeup);                              \
+        MUTEX_UNLOCK(&(mutex)->lock);                               \
+    } STMT_END
 
 #  define PERL_RW_MUTEX_INIT(mutex)                                 \
     STMT_START {                                                    \
-        MUTEX_INIT(mutex.lock);                                     \
-        COND_INIT(mutex.zero_readers);                              \
+        MUTEX_INIT(&(mutex)->lock);                                 \
+        COND_INIT(&(mutex)->wakeup);                                \
         (mutex)->readers_count = 0;                                 \
     } STMT_END
 
 #  define PERL_RW_MUTEX_DESTROY(mutex)                              \
     STMT_START {                                                    \
-        COND_DESTROY(mutex.zero_readers);                           \
-        MUTEX_DESTROY(mutex.lock);                                  \
+        COND_DESTROY(&(mutex)->wakeup);                             \
+        MUTEX_DESTROY(&(mutex)->lock);                              \
     } STMT_END
 
 #endif
@@ -468,6 +476,8 @@
 #  define PERL_READ_UNLOCK        NOOP
 #  define PERL_WRITE_LOCK         NOOP
 #  define PERL_WRITE_UNLOCK       NOOP
+#  define PERL_RW_MUTEX_INIT      NOOP
+#  define PERL_RW_MUTEX_DESTROY   NOOP
 #endif
 
 #ifndef LOCK_DOLLARZERO_MUTEX

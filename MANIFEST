@@ -248,6 +248,10 @@ cpan/Config-Perl-V/t/31_plv52511.t		Config::Perl::V
 cpan/Config-Perl-V/t/32_plv5261rc1.t		Config::Perl::V
 cpan/Config-Perl-V/t/33_plv52711r.t		Config::Perl::V
 cpan/Config-Perl-V/t/34_plv5280.t		Config::Perl::V
+cpan/Config-Perl-V/t/35_plv52910g.t		Config::Perl::V
+cpan/Config-Perl-V/t/36_plv5300.t		Config::Perl::V
+cpan/Config-Perl-V/t/37_plv53111qm.t		Config::Perl::V
+cpan/Config-Perl-V/t/38_plv5320tld.t		Config::Perl::V
 cpan/Config-Perl-V/V.pm				Config::Perl::V
 cpan/CPAN/lib/App/Cpan.pm		helper package for CPAN.pm
 cpan/CPAN/lib/CPAN.pm			Interface to Comprehensive Perl Archive Network
@@ -1275,7 +1279,6 @@ cpan/libnet/t/config.t		libnet
 cpan/libnet/t/datasend.t	libnet
 cpan/libnet/t/ftp.t		libnet
 cpan/libnet/t/hostname.t	libnet
-cpan/libnet/t/libnet_t.pl	libnet
 cpan/libnet/t/netrc.t		libnet
 cpan/libnet/t/nntp.t		libnet
 cpan/libnet/t/nntp_ipv6.t
@@ -1541,6 +1544,10 @@ cpan/perlfaq/lib/perlfaq8.pod	System Interaction
 cpan/perlfaq/lib/perlfaq9.pod	Networking
 cpan/perlfaq/lib/perlglossary.pod	Perl Glossary
 cpan/PerlIO-via-QuotedPrint/lib/PerlIO/via/QuotedPrint.pm	PerlIO::via::QuotedPrint
+cpan/PerlIO-via-QuotedPrint/t/changes.t
+cpan/PerlIO-via-QuotedPrint/t/critic.t
+cpan/PerlIO-via-QuotedPrint/t/pod.t
+cpan/PerlIO-via-QuotedPrint/t/pod_coverage.t
 cpan/PerlIO-via-QuotedPrint/t/QuotedPrint.t			PerlIO::via::QuotedPrint
 cpan/Pod-Checker/lib/Pod/Checker.pm
 cpan/Pod-Checker/scripts/podchecker.PL
@@ -2582,6 +2589,11 @@ cpan/Text-Balanced/t/06_extqlk.t	See if Text::Balanced works
 cpan/Text-Balanced/t/07_exttag.t	See if Text::Balanced works
 cpan/Text-Balanced/t/08_extvar.t	See if Text::Balanced works
 cpan/Text-Balanced/t/09_gentag.t	See if Text::Balanced works
+cpan/Text-Balanced/t/94_changes.t
+cpan/Text-Balanced/t/95_critic.t
+cpan/Text-Balanced/t/96_pmv.t
+cpan/Text-Balanced/t/97_pod.t
+cpan/Text-Balanced/t/98_pod_coverage.t
 cpan/Text-ParseWords/lib/Text/ParseWords.pm	Perl module to split words on arbitrary delimiter
 cpan/Text-ParseWords/t/ParseWords.t		See if Text::ParseWords works
 cpan/Text-ParseWords/t/taint.t			See if Text::ParseWords works with tainting
@@ -4351,6 +4363,7 @@ ext/POSIX/Makefile.PL		POSIX extension makefile writer
 ext/POSIX/POSIX.xs		POSIX extension external subroutines
 ext/POSIX/t/export.t		Test @EXPORT and @EXPORT_OK
 ext/POSIX/t/iscrash		See if POSIX isxxx() crashes with threads on Win32
+ext/POSIX/t/iv_const.t		See if integer constants of POSIX are IV
 ext/POSIX/t/math.t		Basic math tests for POSIX
 ext/POSIX/t/mb.t		Multibyte function tests for POSIX
 ext/POSIX/t/posix.t		See if POSIX works
@@ -5215,6 +5228,7 @@ pod/perl5331delta.pod		Perl changes in version 5.33.1
 pod/perl5332delta.pod		Perl changes in version 5.33.2
 pod/perl5333delta.pod		Perl changes in version 5.33.3
 pod/perl5334delta.pod		Perl changes in version 5.33.4
+pod/perl5335delta.pod		Perl changes in version 5.33.5
 pod/perl561delta.pod		Perl changes in version 5.6.1
 pod/perl56delta.pod		Perl changes in version 5.6
 pod/perl581delta.pod		Perl changes in version 5.8.1
@@ -5244,6 +5258,7 @@ pod/perldebug.pod		Perl debugging
 pod/perldelta.pod		Perl changes since previous version
 pod/perldeprecation.pod		Perl deprecations
 pod/perldiag.pod		Perl diagnostic messages
+pod/perldocstyle.pod		Perl style guide for core docs
 pod/perldsc.pod			Perl data structures intro
 pod/perldtrace.pod		Perl's support for DTrace
 pod/perlebcdic.pod		Considerations for running Perl on EBCDIC platforms
