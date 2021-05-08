@@ -724,12 +724,28 @@ S_no_bareword_allowed(pTHX_ OP *o)
     o->op_private &= ~OPpCONST_STRICT; /* prevent warning twice about the same OP */
 }
 
+void
+Perl_no_bareword_filehandle(pTHX_ const char *fhname) {
+    PERL_ARGS_ASSERT_NO_BAREWORD_FILEHANDLE;
+
+    if (strNE(fhname, "STDERR")
+        && strNE(fhname, "STDOUT")
+        && strNE(fhname, "STDIN")
+        && strNE(fhname, "_")
+        && strNE(fhname, "ARGV")
+        && strNE(fhname, "ARGVOUT")
+        && strNE(fhname, "DATA")) {
+        qerror(Perl_mess(aTHX_ "Bareword filehandle \"%s\" not allowed under 'no feature \"bareword_filehandles\"'", fhname));
+    }
+}
+
 /* "register" allocation */
 
 PADOFFSET
 Perl_allocmy(pTHX_ const char *const name, const STRLEN len, const U32 flags)
 {
     PADOFFSET off;
+    bool is_idfirst, is_default;
     const bool is_our = (PL_parser->in_my == KEY_our);
 
     PERL_ARGS_ASSERT_ALLOCMY;
@@ -738,14 +754,15 @@ Perl_allocmy(pTHX_ const char *const name, const STRLEN len, const U32 flags)
 	Perl_croak(aTHX_ "panic: allocmy illegal flag bits 0x%" UVxf,
 		   (UV)flags);
 
+    is_idfirst = flags & SVf_UTF8
+        ? isIDFIRST_utf8_safe((U8*)name + 1, name + len)
+        : isIDFIRST_A(name[1]);
+
+    /* $_, @_, etc. */
+    is_default = len == 2 && name[1] == '_';
+
     /* complain about "my $<special_var>" etc etc */
-    if (   len
-        && !(  is_our
-            || isALPHA(name[1])
-            || (   (flags & SVf_UTF8)
-                && isIDFIRST_utf8_safe((U8 *)name+1, name + len))
-            || (name[1] == '_' && len > 2)))
-    {
+    if (!is_our && (!is_idfirst || is_default)) {
         const char * const type =
               PL_parser->in_my == KEY_sigvar ? "subroutine signature" :
               PL_parser->in_my == KEY_state  ? "\"state\""     : "\"my\"";
@@ -5591,7 +5608,7 @@ Perl_cmpchain_finish(pTHX_ OP *ch)
 	    cmpop->op_private = 2;
 	    cmpop = CHECKOP(cmpoptype, cmpop);
 	    if(!cmpop->op_next && cmpop->op_type == cmpoptype)
-		cmpop = fold_constants(op_integerize(op_std_init(cmpop)));
+		cmpop = op_integerize(op_std_init(cmpop));
 	    condop = condop ? newLOGOP(OP_CMPCHAIN_AND, 0, cmpop, condop) :
 			cmpop;
 	    if (!nextrightarg)
@@ -6682,6 +6699,7 @@ Perl_newUNOP(pTHX_ I32 type, I32 flags, OP *first)
 	|| (PL_opargs[type] & OA_CLASS_MASK) == OA_LOOPEXOP
 	|| type == OP_SASSIGN
 	|| type == OP_ENTERTRY
+        || type == OP_ENTERTRYCATCH
 	|| type == OP_CUSTOM
 	|| type == OP_NULL );
 
@@ -9799,6 +9817,63 @@ Perl_newCONDOP(pTHX_ I32 flags, OP *first, OP *trueop, OP *falseop)
 }
 
 /*
+=for apidoc newTRYCATCHOP
+
+Constructs and returns a conditional execution statement that implements
+the C<try>/C<catch> semantics.  First the op tree in C<tryblock> is executed,
+inside a context that traps exceptions.  If an exception occurs then the
+optree in C<catchblock> is executed, with the trapped exception set into the
+lexical variable given by C<catchvar> (which must be an op of type
+C<OP_PADSV>).  All the optrees are consumed by this function and become part
+of the returned op tree. 
+
+The C<flags> argument is currently ignored.
+
+=cut
+ */
+
+OP *
+Perl_newTRYCATCHOP(pTHX_ I32 flags, OP *tryblock, OP *catchvar, OP *catchblock)
+{
+    OP *o, *catchop;
+
+    PERL_ARGS_ASSERT_NEWTRYCATCHOP;
+    assert(catchvar->op_type == OP_PADSV);
+
+    PERL_UNUSED_ARG(flags);
+
+    /* The returned optree is shaped as:
+     *   LISTOP leavetrycatch
+     *       LOGOP entertrycatch
+     *       LISTOP poptry
+     *           $tryblock here
+     *       LOGOP catch
+     *           $catchblock here
+     */
+
+    if(tryblock->op_type != OP_LINESEQ)
+        tryblock = op_convert_list(OP_LINESEQ, 0, tryblock);
+    OpTYPE_set(tryblock, OP_POPTRY);
+
+    /* Manually construct a naked LOGOP.
+     * Normally if we call newLOGOP the returned value is a UNOP(OP_NULL)
+     * containing the LOGOP we wanted as its op_first */
+    catchop = (OP *)alloc_LOGOP(OP_CATCH, newOP(OP_NULL, 0), catchblock);
+    OpMORESIB_set(cUNOPx(catchop)->op_first, catchblock);
+    OpLASTSIB_set(catchblock, catchop);
+
+    /* Inject the catchvar's pad offset into the OP_CATCH targ */
+    cLOGOPx(catchop)->op_targ = catchvar->op_targ;
+    op_free(catchvar);
+
+    /* Build the optree structure */
+    o = newLISTOP(OP_LIST, 0, tryblock, catchop);
+    o = op_convert_list(OP_ENTERTRYCATCH, 0, o);
+
+    return o;
+}
+
+/*
 =for apidoc newRANGE
 
 Constructs and returns a C<range> op, with subordinate C<flip> and
@@ -12780,6 +12855,69 @@ Perl_ck_eval(pTHX_ OP *o)
 }
 
 OP *
+Perl_ck_trycatch(pTHX_ OP *o)
+{
+    LOGOP *enter;
+    OP *to_free = NULL;
+    OP *trykid, *catchkid;
+    OP *catchroot, *catchstart;
+
+    PERL_ARGS_ASSERT_CK_TRYCATCH;
+
+    trykid = cUNOPo->op_first;
+    if(trykid->op_type == OP_NULL || trykid->op_type == OP_PUSHMARK) {
+        to_free = trykid;
+        trykid = OpSIBLING(trykid);
+    }
+    catchkid = OpSIBLING(trykid);
+
+    assert(trykid->op_type == OP_POPTRY);
+    assert(catchkid->op_type == OP_CATCH);
+
+    /* cut whole sibling chain free from o */
+    op_sibling_splice(o, NULL, -1, NULL);
+    if(to_free)
+        op_free(to_free);
+    op_free(o);
+
+    enter = alloc_LOGOP(OP_ENTERTRYCATCH, NULL, NULL);
+
+    /* establish postfix order */
+    enter->op_next = (OP*)enter;
+
+    o = op_prepend_elem(OP_LINESEQ, (OP*)enter, trykid);
+    op_append_elem(OP_LINESEQ, (OP*)o, catchkid);
+
+    OpTYPE_set(o, OP_LEAVETRYCATCH);
+
+    /* The returned optree is actually threaded up slightly nonobviously in
+     * terms of its ->op_next pointers.
+     *
+     * This way, if the tryblock dies, its retop points at the OP_CATCH, but
+     * if it does not then its leavetry skips over that and continues
+     * execution past it.
+     */
+
+    /* First, link up the actual body of the catch block */
+    catchroot = OpSIBLING(cUNOPx(catchkid)->op_first);
+    catchstart = LINKLIST(catchroot);
+    cLOGOPx(catchkid)->op_other = catchstart;
+
+    o->op_next = LINKLIST(o);
+
+    /* die within try block should jump to the catch */
+    enter->op_other = catchkid;
+
+    /* after try block that doesn't die, just skip straight to leavetrycatch */
+    trykid->op_next = o;
+
+    /* after catch block, skip back up to the leavetrycatch */
+    catchroot->op_next = o;
+
+    return o;
+}
+
+OP *
 Perl_ck_exec(pTHX_ OP *o)
 {
     PERL_ARGS_ASSERT_CK_EXEC;
@@ -13088,6 +13226,11 @@ Perl_ck_fun(pTHX_ OP *o)
 		    {
 			OP * const newop = newGVOP(OP_GV, 0,
 			    gv_fetchsv(((SVOP*)kid)->op_sv, GV_ADD, SVt_PVIO));
+                        /* a first argument is handled by toke.c, ideally we'd
+                         just check here but several ops don't use ck_fun() */
+                        if (!FEATURE_BAREWORD_FILEHANDLES_IS_ENABLED && numargs > 1) {
+                            no_bareword_filehandle(SvPVX(cSVOPx_sv((SVOP*)kid)));
+                        }
                         /* replace kid with newop in chain */
                         op_sibling_splice(o, prev_kid, 1, newop);
 			op_free(kid);
@@ -15157,6 +15300,9 @@ Perl_ck_trunc(pTHX_ OP *o)
 	{
 	    o->op_flags |= OPf_SPECIAL;
 	    kid->op_private &= ~OPpCONST_STRICT;
+            if (!FEATURE_BAREWORD_FILEHANDLES_IS_ENABLED) {
+                no_bareword_filehandle(SvPVX(cSVOPx_sv(kid)));
+            }
 	}
     }
     return ck_fun(o);
@@ -17876,7 +18022,7 @@ Perl_rpeep(pTHX_ OP *o)
                 || !r                      /* .... = (); */
                 || !(l & ~AAS_SAFE_SCALAR) /* (undef, pos()) = ...; */
                 || !(r & ~AAS_SAFE_SCALAR) /* ... = (1,2,length,undef); */
-                || (lscalars < 2)          /* ($x, undef) = ... */
+                || (lscalars < 2)          /* (undef, $x) = ... */
             ) {
                 NOOP; /* always safe */
             }

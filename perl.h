@@ -2178,7 +2178,22 @@ You probably want to be using L<C</INT2PTR>> instead.
 #  endif
 #endif
 
-typedef NVTYPE NV;
+/* On MS Windows,with 64-bit mingw-w64 compilers, we
+   need to attend to a __float128 alignment issue if
+   USE_QUADMATH is defined. Otherwise we simply:
+   typedef NVTYPE NV
+   32-bit mingw.org compilers might also require
+   aligned(32) - at least that's what I found with my
+   Math::Foat128 module. But this is as yet untested
+   here, so no allowance is being made for mingw.org
+   compilers at this stage. -- sisyphus January 2021
+*/
+#if defined(USE_QUADMATH) && defined(__MINGW64__)
+   /* 64-bit build, mingw-w64 compiler only */
+   typedef NVTYPE NV __attribute__ ((aligned(8)));
+#else
+   typedef NVTYPE NV;
+#endif
 
 #ifdef I_IEEEFP
 #   include <ieeefp.h>
@@ -2468,7 +2483,7 @@ extern long double Perl_my_frexpl(long double x, int *e);
 #     define FP_QNAN FP_QNAN
 #    endif
 #    include <math.h>
-#    ifdef I_IEEFP
+#    ifdef I_IEEEFP
 #        include <ieeefp.h>
 #    endif
 #    ifdef I_FP
@@ -2677,7 +2692,7 @@ extern long double Perl_my_frexpl(long double x, int *e);
 #        define Perl_isfinitel(x) isfinitel(x)
 #    elif defined(HAS_FINITEL)
 #        define Perl_isfinitel(x) finitel(x)
-#    elif defined(HAS_INFL) && defined(HAS_NANL)
+#    elif defined(HAS_ISINFL) && defined(HAS_ISNANL)
 #        define Perl_isfinitel(x) !(isinfl(x)||isnanl(x))
 #    else
 #        define Perl_isfinitel(x) ((x) * 0 == 0)  /* See Perl_isfinite. */
@@ -3345,7 +3360,7 @@ typedef pthread_key_t	perl_key;
 typedef struct {
     perl_mutex lock;
     perl_cond  wakeup;
-    Size_t     readers_count;
+    SSize_t    readers_count;
 } perl_RnW1_mutex_t;
 
 
@@ -4372,6 +4387,11 @@ Gid_t getegid (void);
 #define DEBUG_DB_RECURSE_FLAG	0x40000000
 #define DEBUG_TOP_FLAG		0x80000000 /* -D was given --> PL_debug |= FLAG */
 
+/* Both flags have to be set */
+#  define DEBUG_BOTH_FLAGS_TEST_(flag1, flag2)              \
+            UNLIKELY((PL_debug & ((flag1)|(flag2)))         \
+                              == ((flag1)|(flag2)))
+
 #  define DEBUG_p_TEST_ UNLIKELY(PL_debug & DEBUG_p_FLAG)
 #  define DEBUG_s_TEST_ UNLIKELY(PL_debug & DEBUG_s_FLAG)
 #  define DEBUG_l_TEST_ UNLIKELY(PL_debug & DEBUG_l_FLAG)
@@ -4400,11 +4420,11 @@ Gid_t getegid (void);
 #  define DEBUG_L_TEST_ UNLIKELY(PL_debug & DEBUG_L_FLAG)
 #  define DEBUG_i_TEST_ UNLIKELY(PL_debug & DEBUG_i_FLAG)
 #  define DEBUG_y_TEST_ UNLIKELY(PL_debug & DEBUG_y_FLAG)
-#  define DEBUG_Xv_TEST_ (DEBUG_X_TEST_ && DEBUG_v_TEST_)
-#  define DEBUG_Uv_TEST_ (DEBUG_U_TEST_ && DEBUG_v_TEST_)
-#  define DEBUG_Pv_TEST_ (DEBUG_P_TEST_ && DEBUG_v_TEST_)
-#  define DEBUG_Lv_TEST_ (DEBUG_L_TEST_ && DEBUG_v_TEST_)
-#  define DEBUG_yv_TEST_ (DEBUG_y_TEST_ && DEBUG_v_TEST_)
+#  define DEBUG_Xv_TEST_ DEBUG_BOTH_FLAGS_TEST_(DEBUG_X_FLAG, DEBUG_v_FLAG)
+#  define DEBUG_Uv_TEST_ DEBUG_BOTH_FLAGS_TEST_(DEBUG_U_FLAG, DEBUG_v_FLAG)
+#  define DEBUG_Pv_TEST_ DEBUG_BOTH_FLAGS_TEST_(DEBUG_P_FLAG, DEBUG_v_FLAG)
+#  define DEBUG_Lv_TEST_ DEBUG_BOTH_FLAGS_TEST_(DEBUG_L_FLAG, DEBUG_v_FLAG)
+#  define DEBUG_yv_TEST_ DEBUG_BOTH_FLAGS_TEST_(DEBUG_y_FLAG, DEBUG_v_FLAG)
 
 #ifdef DEBUGGING
 
@@ -4467,16 +4487,47 @@ Gid_t getegid (void);
                               }                                         \
     } STMT_END
 
+/* These allow you to customize your debugging output  for specialized,
+ * generally temporary ad-hoc purposes.  For example, if you need 'errno'
+ * preserved, you can add definitions to these macros (either in this file for
+ * the whole program, or before the #include "perl.h" in a particular .c file
+ * you're trying to debug) and recompile:
+ *
+ * #define DEBUG_PRE_STMTS   dSAVE_ERRNO;
+ * #define DEBUG_POST_STMTS  RESTORE_ERRNO;
+ *
+ * Other potential things include displaying timestamps, location information,
+ * which thread, etc.  Heres an example with both errno and location info:
+ *
+ * #define DEBUG_PRE_STMTS   dSAVE_ERRNO;  \
+ *              PerlIO_printf(Perl_debug_log, "%s:%d: ", __FILE__, __LINE__);
+ * #define DEBUG_POST  RESTORE_ERRNO;
+ *
+ * All DEBUG statements in the compiled scope will be have these extra
+ * statements compiled in; they will be executed only for the DEBUG statements
+ * whose flags are turned on.
+ */
+#ifndef DEBUG_PRE_STMTS
+#  define DEBUG_PRE_STMTS
+#endif
+#ifndef DEBUG_POST_STMTS
+#  define DEBUG_POST_STMTS
+#endif
+
 #  define DEBUG__(t, a)                                                 \
         STMT_START {                                                    \
-                if (t) STMT_START {a;} STMT_END;                        \
+            if (t) STMT_START {                                         \
+                DEBUG_PRE_STMTS a; DEBUG_POST_STMTS                     \
+            } STMT_END;                                                 \
         } STMT_END
 
 #  define DEBUG_f(a) DEBUG__(DEBUG_f_TEST, a)
 
 /* For re_comp.c, re_exec.c, assume -Dr has been specified */
 #  ifdef PERL_EXT_RE_BUILD
-#    define DEBUG_r(a) STMT_START {a;} STMT_END
+#    define DEBUG_r(a) STMT_START {                                     \
+                            DEBUG_PRE_STMTS a; DEBUG_POST_STMTS         \
+                       } STMT_END;
 #  else
 #    define DEBUG_r(a) DEBUG__(DEBUG_r_TEST, a)
 #  endif /* PERL_EXT_RE_BUILD */
@@ -6952,8 +7003,8 @@ cannot have changed since the precalculation.
 #  define LOCK_LC_NUMERIC_STANDARD()                                        \
         STMT_START {                                                        \
             DEBUG_Lv(PerlIO_printf(Perl_debug_log,                          \
-                      "%s: %d: lock lc_numeric_standard: new depth=%d\n",   \
-                      __FILE__, __LINE__, PL_numeric_standard + 1));        \
+                    "%s: %d: lc_numeric_standard now locked to depth %d\n", \
+                    __FILE__, __LINE__, PL_numeric_standard));              \
             __ASSERT_(PL_numeric_standard)                                  \
             PL_numeric_standard++;                                          \
         } STMT_END
@@ -6967,8 +7018,13 @@ cannot have changed since the precalculation.
                 assert(0);                                                  \
             }                                                               \
             DEBUG_Lv(PerlIO_printf(Perl_debug_log,                          \
-            "%s: %d: lc_numeric_standard decrement lock, new depth=%d\n",   \
-            __FILE__, __LINE__, PL_numeric_standard));                      \
+                                   "%s: %d: ",  __FILE__, __LINE__);        \
+                    if (PL_numeric_standard <= 1)                           \
+                        PerlIO_printf(Perl_debug_log,                       \
+                                      "lc_numeric_standard now unlocked\n");\
+                    else PerlIO_printf(Perl_debug_log,                      \
+                     "lc_numeric_standard lock decremented to depth %d\n",  \
+                                                     PL_numeric_standard););\
         } STMT_END
 
 #  define WITH_LC_NUMERIC_SET_TO_NEEDED_IN(in_lc_numeric, block)            \

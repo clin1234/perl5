@@ -888,7 +888,7 @@ struct body_details {
         name align_me;				\
         NV nv;				\
         IV iv;				\
-    } ALIGNED_TYPE_NAME(name);
+    } ALIGNED_TYPE_NAME(name)
 
 ALIGNED_TYPE(regexp);
 ALIGNED_TYPE(XPVGV);
@@ -8949,9 +8949,16 @@ Perl_sv_inc_nomg(pTHX_ SV *const sv)
     }
     if (flags & SVp_NOK) {
 	const NV was = SvNVX(sv);
-	if (LIKELY(!Perl_isinfnan(was)) &&
-            NV_OVERFLOWS_INTEGERS_AT != 0.0 &&
-	    was >= NV_OVERFLOWS_INTEGERS_AT) {
+        if (NV_OVERFLOWS_INTEGERS_AT != 0.0 &&
+            /* If NVX was NaN, the following comparisons return always false */
+            UNLIKELY(was >= NV_OVERFLOWS_INTEGERS_AT ||
+                     was < -NV_OVERFLOWS_INTEGERS_AT) &&
+#if defined(NAN_COMPARE_BROKEN)
+            LIKELY(!Perl_isinfnan(was))
+#else
+            LIKELY(!Perl_isinf(was))
+#endif
+            ) {
 	    /* diag_listed_as: Lost precision when %s %f by 1 */
 	    Perl_ck_warner(aTHX_ packWARN(WARN_IMPRECISION),
 			   "Lost precision when incrementing %" NVff " by 1",
@@ -9128,9 +9135,16 @@ Perl_sv_dec_nomg(pTHX_ SV *const sv)
     oops_its_num:
 	{
 	    const NV was = SvNVX(sv);
-	    if (LIKELY(!Perl_isinfnan(was)) &&
-                NV_OVERFLOWS_INTEGERS_AT != 0.0 &&
-		was <= -NV_OVERFLOWS_INTEGERS_AT) {
+            if (NV_OVERFLOWS_INTEGERS_AT != 0.0 &&
+                /* If NVX was NaN, these comparisons return always false */
+                UNLIKELY(was <= -NV_OVERFLOWS_INTEGERS_AT ||
+                         was > NV_OVERFLOWS_INTEGERS_AT) &&
+#if defined(NAN_COMPARE_BROKEN)
+                LIKELY(!Perl_isinfnan(was)))
+#else
+                LIKELY(!Perl_isinf(was))
+#endif
+                ) {
 		/* diag_listed_as: Lost precision when %s %f by 1 */
 		Perl_ck_warner(aTHX_ packWARN(WARN_IMPRECISION),
 			       "Lost precision when decrementing %" NVff " by 1",
@@ -9457,7 +9471,7 @@ created first.  Turns on the C<SvIsCOW> flag (or C<READONLY>
 and C<FAKE> in 5.16 and earlier).  If the C<hash> parameter
 is non-zero, that value is used; otherwise the hash is computed.
 The string's hash can later be retrieved from the SV
-with the C<SvSHARED_HASH()> macro.  The idea here is
+with the C<L</SvSHARED_HASH>> macro.  The idea here is
 that as the string table is used for shared hash keys these strings will have
 C<SvPVX_const == HeKEY> and hash lookup will avoid string compare.
 
@@ -11774,6 +11788,8 @@ S_format_hexfp(pTHX_ char * const buf, const STRLEN bufsize, const char c,
 
     if (hexradix) {
 #ifndef USE_LOCALE_NUMERIC
+        PERL_UNUSED_ARG(in_lc_numeric);
+
         *p++ = '.';
 #else
         if (in_lc_numeric) {
@@ -12272,10 +12288,6 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
     (IVSIZE == 4 && !defined(HAS_LONG_DOUBLE))
 	case 'L':			/* Ld */
 	    /* FALLTHROUGH */
-#  ifdef USE_QUADMATH
-        case 'Q':
-	    /* FALLTHROUGH */
-#  endif
 #  if IVSIZE >= 8
 	case 'q':			/* qd */
 #  endif
@@ -12303,6 +12315,9 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
 	    else
 		intsize = 'h';
 	    break;
+#ifdef USE_QUADMATH
+        case 'Q':
+#endif
 	case 'V':
 	case 'z':
 	case 't':
@@ -12383,8 +12398,6 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
 	    /* INTEGERS */
 
 	case 'p':
-	    if (alt)
-		goto unknown;
 
             /* %p extensions:
              *
@@ -12459,6 +12472,7 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
 
 	    uv = PTR2UV(args ? va_arg(*args, void*) : argsv);
 	    base = 16;
+            c = 'x';    /* in case the format string contains '#' */
 	    goto do_integer;
 
 	case 'c':
@@ -12498,7 +12512,7 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
                  && q == fmtstart + 1 /* plain %d, not %....d */
                  && patend >= fmtstart + sizeof(UTF8f) - 1 /* long enough */
                  && *q == '%'
-                 && strnEQ(q + 1, UTF8f + 2, sizeof(UTF8f) - 3))
+                 && strnEQ(q + 1, (UTF8f) + 2, sizeof(UTF8f) - 3))
             {
 		/* The argument has already gone through cBOOL, so the cast
 		   is safe. */
@@ -12824,6 +12838,10 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
 	       for simplicity we allow any of %Lf, %llf, %qf for long double
 	    */
 	    switch (intsize) {
+#if defined(USE_QUADMATH)
+            case 'Q':
+                break;
+#endif
 	    case 'V':
 #if defined(USE_LONG_DOUBLE) || defined(USE_QUADMATH)
 		intsize = 'q';
@@ -12863,9 +12881,10 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
                  * is when the format specifier explicitly asks so with
                  * e.g. "%Lg". */
 #ifdef USE_QUADMATH
-                fv = intsize == 'q' ?
-                    va_arg(*args, NV) : va_arg(*args, double);
-                nv = fv;
+                nv = intsize == 'Q' ? va_arg(*args, NV) :
+                    intsize == 'q' ? va_arg(*args, long double) :
+                    va_arg(*args, double);
+                fv = nv;
 #elif LONG_DOUBLESIZE > DOUBLESIZE
                 if (intsize == 'q') {
                     fv = va_arg(*args, long double);
@@ -13058,10 +13077,15 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
                 && precis   /* See earlier comment about buggy Gconvert
                                when digits, aka precis, is 0  */
                 && has_precis
-                /* check, in manner not involving wrapping, that it will
-                 * fit in ebuf  */
-                && float_need < sizeof(ebuf)
+                /* check that "%.<number>g" formatting will fit in ebuf  */
                 && sizeof(ebuf) - float_need > precis
+                /* sizeof(ebuf) - float_need will have wrapped if float_need > sizeof(ebuf).     *
+                 * Therefore we should check that float_need < sizeof(ebuf). Normally, we would  *
+                 * have run this check first, but that triggers incorrect -Wformat-overflow      *
+                 * compilation warnings with some versions of gcc if Gconvert invokes sprintf(). *
+                 * ( See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=89161 )                   *
+                 * So, instead, we check it next:                                                */
+                && float_need < sizeof(ebuf)
                 && !(width || left || plus || alt)
                 && !fill
                 && intsize != 'q'
@@ -13120,10 +13144,12 @@ Perl_sv_vcatpvfn_flags(pTHX_ SV *const sv, const char *const pat, const STRLEN p
                 *--ptr = '\0';
                 *--ptr = c;
 #if defined(USE_QUADMATH)
-		if (intsize == 'q') {
-                    /* "g" -> "Qg" */
-                    *--ptr = 'Q';
-                }
+                /* always use Q here.  my_snprint() throws an exception if we
+                   fallthrough to the double/long double code, even when the
+                   format is correct, presumably to avoid any accidentally
+                   missing Q.
+                */
+                *--ptr = 'Q';
                 /* FIXME: what to do if HAS_LONG_DOUBLE but not PERL_PRIfldbl? */
 #elif defined(HAS_LONG_DOUBLE) && defined(PERL_PRIfldbl)
 		/* Note that this is HAS_LONG_DOUBLE and PERL_PRIfldbl,
@@ -15297,7 +15323,7 @@ perl_clone_using(PerlInterpreter *proto_perl, UV flags,
 
 #ifdef USE_LOCALE_COLLATE
     PL_collation_ix	= proto_perl->Icollation_ix;
-    PL_collation_standard	= proto_perl->Icollation_standard;
+    PL_collation_standard = proto_perl->Icollation_standard;
     PL_collxfrm_base	= proto_perl->Icollxfrm_base;
     PL_collxfrm_mult	= proto_perl->Icollxfrm_mult;
     PL_strxfrm_max_cp   = proto_perl->Istrxfrm_max_cp;

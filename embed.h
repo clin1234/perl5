@@ -392,6 +392,7 @@
 #define newSVrv(a,b)		Perl_newSVrv(aTHX_ a,b)
 #define newSVsv_flags(a,b)	Perl_newSVsv_flags(aTHX_ a,b)
 #define newSVuv(a)		Perl_newSVuv(aTHX_ a)
+#define newTRYCATCHOP(a,b,c,d)	Perl_newTRYCATCHOP(aTHX_ a,b,c,d)
 #define newUNOP(a,b,c)		Perl_newUNOP(aTHX_ a,b,c)
 #define newUNOP_AUX(a,b,c,d)	Perl_newUNOP_AUX(aTHX_ a,b,c,d)
 #define newWHENOP(a,b)		Perl_newWHENOP(aTHX_ a,b)
@@ -821,6 +822,7 @@
 #define cx_pushloop_for(a,b,c)	Perl_cx_pushloop_for(aTHX_ a,b,c)
 #define cx_pushloop_plain(a)	Perl_cx_pushloop_plain(aTHX_ a)
 #define cx_pushsub(a,b,c,d)	Perl_cx_pushsub(aTHX_ a,b,c,d)
+#define cx_pushtry(a,b)		Perl_cx_pushtry(aTHX_ a,b)
 #define cx_pushwhen(a)		Perl_cx_pushwhen(aTHX_ a)
 #define cx_topblock(a)		Perl_cx_topblock(aTHX_ a)
 #define gimme_V()		Perl_gimme_V(aTHX)
@@ -1047,6 +1049,7 @@
 #define find_first_differing_byte_pos	S_find_first_differing_byte_pos
 #define get_ANYOFM_contents(a)	S_get_ANYOFM_contents(aTHX_ a)
 #define get_ANYOF_cp_list_for_ssc(a,b)	S_get_ANYOF_cp_list_for_ssc(aTHX_ a,b)
+#define get_quantifier_value(a,b,c)	S_get_quantifier_value(aTHX_ a,b,c)
 #define grok_bslash_N(a,b,c,d,e,f,g)	S_grok_bslash_N(aTHX_ a,b,c,d,e,f,g)
 #define handle_named_backref(a,b,c,d)	S_handle_named_backref(aTHX_ a,b,c,d)
 #define handle_names_wildcard(a,b,c,d)	S_handle_names_wildcard(aTHX_ a,b,c,d)
@@ -1060,7 +1063,6 @@
 #define join_exact(a,b,c,d,e,f,g)	S_join_exact(aTHX_ a,b,c,d,e,f,g)
 #define make_exactf_invlist(a,b)	S_make_exactf_invlist(aTHX_ a,b)
 #define make_trie(a,b,c,d,e,f,g,h)	S_make_trie(aTHX_ a,b,c,d,e,f,g,h)
-#define new_regcurly		S_new_regcurly
 #define nextchar(a)		S_nextchar(aTHX_ a)
 #define output_posix_warnings(a,b)	S_output_posix_warnings(aTHX_ a,b)
 #define parse_lparen_question_flags(a)	S_parse_lparen_question_flags(aTHX_ a)
@@ -1178,6 +1180,7 @@
 #define find_span_end		S_find_span_end
 #define find_span_end_mask	S_find_span_end_mask
 #define foldEQ_latin1_s2_folded	S_foldEQ_latin1_s2_folded
+#define isFOO_lc(a,b)		S_isFOO_lc(aTHX_ a,b)
 #define isFOO_utf8_lc(a,b,c)	S_isFOO_utf8_lc(aTHX_ a,b,c)
 #define isGCB(a,b,c,d,e)	S_isGCB(aTHX_ a,b,c,d,e)
 #define isLB(a,b,c,d,e,f)	S_isLB(aTHX_ a,b,c,d,e,f)
@@ -1196,9 +1199,6 @@
 #define regtry(a,b)		S_regtry(aTHX_ a,b)
 #define to_byte_substr(a)	S_to_byte_substr(aTHX_ a)
 #define to_utf8_substr(a)	S_to_utf8_substr(aTHX_ a)
-#  endif
-#  if defined(PERL_IN_REGEXEC_C) || defined(PERL_IN_UTF8_C)
-#define isFOO_lc(a,b)		Perl_isFOO_lc(aTHX_ a,b)
 #  endif
 #endif
 #ifdef PERL_CORE
@@ -1270,6 +1270,7 @@
 #define ck_svconst(a)		Perl_ck_svconst(aTHX_ a)
 #define ck_tell(a)		Perl_ck_tell(aTHX_ a)
 #define ck_trunc(a)		Perl_ck_trunc(aTHX_ a)
+#define ck_trycatch(a)		Perl_ck_trycatch(aTHX_ a)
 #define closest_cop(a,b,c,d)	Perl_closest_cop(aTHX_ a,b,c,d)
 #define cmpchain_extend(a,b,c)	Perl_cmpchain_extend(aTHX_ a,b,c)
 #define cmpchain_finish(a)	Perl_cmpchain_finish(aTHX_ a)
@@ -1408,6 +1409,7 @@
 #define newXS_deffile(a,b)	Perl_newXS_deffile(aTHX_ a,b)
 #define newXS_len_flags(a,b,c,d,e,f,g)	Perl_newXS_len_flags(aTHX_ a,b,c,d,e,f,g)
 #define nextargv(a,b)		Perl_nextargv(aTHX_ a,b)
+#define no_bareword_filehandle(a)	Perl_no_bareword_filehandle(aTHX_ a)
 #define noperl_die		Perl_noperl_die
 #define notify_parser_that_changed_to_utf8()	Perl_notify_parser_that_changed_to_utf8(aTHX)
 #define oopsAV(a)		Perl_oopsAV(aTHX_ a)

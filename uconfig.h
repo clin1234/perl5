@@ -1229,8 +1229,8 @@
  *	This symbol contains the ~name expanded version of ARCHLIB, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-/*#define ARCHLIB "/usr/local/lib/perl5/5.33/unknown"		/ **/
-/*#define ARCHLIB_EXP "/usr/local/lib/perl5/5.33/unknown"		/ **/
+/*#define ARCHLIB "/usr/local/lib/perl5/5.34/unknown"		/ **/
+/*#define ARCHLIB_EXP "/usr/local/lib/perl5/5.34/unknown"		/ **/
 
 /* BIN:
  *	This symbol holds the path of the bin directory where the package will
@@ -1283,8 +1283,8 @@
  *	This symbol contains the ~name expanded version of PRIVLIB, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-#define PRIVLIB "/usr/local/lib/perl5/5.33"		/**/
-#define PRIVLIB_EXP "/usr/local/lib/perl5/5.33"		/**/
+#define PRIVLIB "/usr/local/lib/perl5/5.34"		/**/
+#define PRIVLIB_EXP "/usr/local/lib/perl5/5.34"		/**/
 
 /* SITEARCH:
  *	This symbol contains the name of the private library for this package.
@@ -1301,8 +1301,8 @@
  *	This symbol contains the ~name expanded version of SITEARCH, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-/*#define SITEARCH "/usr/local/lib/perl5/5.33/unknown"		/ **/
-/*#define SITEARCH_EXP "/usr/local/lib/perl5/5.33/unknown"		/ **/
+/*#define SITEARCH "/usr/local/lib/perl5/5.34/unknown"		/ **/
+/*#define SITEARCH_EXP "/usr/local/lib/perl5/5.34/unknown"		/ **/
 
 /* SITELIB:
  *	This symbol contains the name of the private library for this package.
@@ -1324,8 +1324,8 @@
  *	removed.  The elements in inc_version_list (inc_version_list.U) can
  *	be tacked onto this variable to generate a list of directories to search.
  */
-#define SITELIB "/usr/local/lib/perl5/5.33"		/**/
-#define SITELIB_EXP "/usr/local/lib/perl5/5.33"		/**/
+#define SITELIB "/usr/local/lib/perl5/5.34"		/**/
+#define SITELIB_EXP "/usr/local/lib/perl5/5.34"		/**/
 #define SITELIB_STEM "/usr/local/lib/perl5"		/**/
 
 /* PERL_VENDORARCH:
@@ -3568,12 +3568,6 @@
  */
 /*#define DEFAULT_INC_EXCLUDES_DOT	/ **/
 
-/* USE_STRICT_BY_DEFAULT:
- *	This symbol, if defined, enables additional defaults.
- *	At this time it only enables implicit strict by default.
- */
-/*#define USE_STRICT_BY_DEFAULT	/ * use strict by default */
-
 /* USE_DYNAMIC_LOADING:
  *	This symbol, if defined, indicates that dynamic loading of
  *	some sort is available.
@@ -4219,6 +4213,12 @@
  *	be built with support for backtrace.
  */
 /*#define USE_C_BACKTRACE		/ **/
+
+/* USE_STRICT_BY_DEFAULT:
+ *	This symbol, if defined, enables additional defaults.
+ *	At this time it only enables implicit strict by default.
+ */
+/*#define USE_STRICT_BY_DEFAULT	/ * use strict by default */
 
 /* USE_DTRACE:
  *	This symbol, if defined, indicates that Perl should
@@ -5282,6 +5282,6 @@
 #endif
 
 /* Generated from:
- * 53ec858c462f9fa2669095834b3d350458c955777a07a0ad7a3a73162ff8ef0e config_h.SH
- * b53784d20c0f250807f47a3130cdc8e01a92da948e6747af87ebc24f11904722 uconfig.sh
+ * 6edd641b187b02d0daa8cb53f5d22f2dcca115a0d3e744f51b0292d2db484ca5 config_h.SH
+ * a9ec40c778a205e0256475b5ef025389f7ea06d75d09ac92414f6b99839577e8 uconfig.sh
  * ex: set ro: */

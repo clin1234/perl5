@@ -747,7 +747,7 @@ Returns a boolean indicating whether the SV contains a v-string.
 =for apidoc Am|U32|SvOOK|SV* sv
 Returns a U32 indicating whether the pointer to the string buffer is offset.
 This hack is used internally to speed up removal of characters from the
-beginning of a C<SvPV>.  When C<SvOOK> is true, then the start of the
+beginning of a C<L</SvPV>>.  When C<SvOOK> is true, then the start of the
 allocated string buffer is actually C<SvOOK_offset()> bytes before C<SvPVX>.
 This offset used to be stored in C<SvIVX>, but is now stored within the spare
 part of the buffer.
@@ -801,7 +801,9 @@ compiler will complain if you were to try to modify the contents of the string,
 (unless you cast away const yourself).
 
 =for apidoc Am|STRLEN|SvCUR|SV* sv
-Returns the length of the string which is in the SV.  See C<L</SvLEN>>.
+Returns the length, in bytes, of the PV inside the SV.
+Note that this may not match Perl's C<length>; for that, use
+C<sv_len_utf8(sv)>. See C<L</SvLEN>> also.
 
 =for apidoc Am|STRLEN|SvLEN|SV* sv
 Returns the size of the string buffer in the SV, not including any part
@@ -855,8 +857,8 @@ Set the value of the MAGIC pointer in C<sv> to val.  See C<L</SvIV_set>>.
 Set the value of the STASH pointer in C<sv> to val.  See C<L</SvIV_set>>.
 
 =for apidoc Am|void|SvCUR_set|SV* sv|STRLEN len
-Set the current length of the string which is in the SV.  See C<L</SvCUR>>
-and C<SvIV_set>>.
+Sets the current length, in bytes, of the C string which is in the SV.
+See C<L</SvCUR>> and C<SvIV_set>>.
 
 =for apidoc Am|void|SvLEN_set|SV* sv|STRLEN len
 Set the size of the string buffer for the SV. See C<L</SvLEN>>.
@@ -922,7 +924,7 @@ Set the size of the string buffer for the SV. See C<L</SvLEN>>.
 =for apidoc Am|U32|SvUTF8|SV* sv
 Returns a U32 value indicating the UTF-8 status of an SV.  If things are set-up
 properly, this indicates whether or not the SV contains UTF-8 encoded data.
-You should use this I<after> a call to C<SvPV()> or one of its variants, in
+You should use this I<after> a call to C<L</SvPV>> or one of its variants, in
 case any call to string overloading updates the internal flag.
 
 If you want to take into account the L<bytes> pragma, use C<L</DO_UTF8>>
@@ -1383,6 +1385,17 @@ object type. Exposed to perl code via Internals::SvREADONLY().
 	STMT_START { assert(SvTYPE(sv) >= SVt_PV); \
 		SvCUR_set(sv, (val) - SvPVX(sv)); } STMT_END
 
+/*
+=for apidoc Am|void|SvPV_renew|SV* sv|STRLEN len
+Low level micro optimization of C<L</SvGROW>>.  It is generally better to use
+C<SvGROW> instead.  This is because C<SvPV_renew> ignores potential issues that
+C<SvGROW> handles.  C<sv> needs to have a real C<PV> that is unencombered by
+things like COW.  Using C<SV_CHECK_THINKFIRST> or
+C<SV_CHECK_THINKFIRST_COW_DROP> before calling this should clean it up, but
+why not just use C<SvGROW> if you're not sure about the provenance?
+
+=cut
+*/
 #define SvPV_renew(sv,n) \
 	STMT_START { SvLEN_set(sv, n); \
 		SvPV_set((sv), (MEM_WRAP_CHECK_(n,char)			\
@@ -1645,6 +1658,14 @@ C<SvPVX> field to be valid (for example, if you intend to write to it), then
 see C<L</SvPV_force>>.
 
 The differences between the forms are:
+
+The forms with neither C<byte> nor C<utf8> in their names (e.g., C<SvPV> or
+C<SvPV_nolen>) can expose the SV's internal string buffer. If
+that buffer consists entirely of bytes 0-255 and includes any bytes above
+127, then you B<MUST> consult C<SvUTF8> to determine the actual code points
+the string is meant to contain. Generally speaking, it is probably safer to
+prefer C<SvPVbyte>, C<SvPVutf8>, and the like. See
+L<perlguts/How do I pass a Perl string to a C library?> for more details.
 
 The forms with C<flags> in their names allow you to use the C<flags> parameter
 to specify to process 'get' magic (by setting the C<SV_GMAGIC> flag) or to skip
@@ -2159,10 +2180,11 @@ Returns the hash for C<sv> created by C<L</newSVpvn_share>>.
 #endif
 
 /*
-=for apidoc Am|SV*|newRV_inc|SV* sv
+=for apidoc newRV
+=for apidoc_item ||newRV_inc|
 
-Creates an RV wrapper for an SV.  The reference count for the original SV is
-incremented.
+These are identical.  They create an RV wrapper for an SV.  The reference count
+for the original SV is incremented.
 
 =cut
 */

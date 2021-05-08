@@ -2356,6 +2356,18 @@ print_long_double()
 #endif
 
 void
+print_long_doubleL()
+        CODE:
+#ifdef HAS_LONG_DOUBLE
+        /* used to test we allow the length modifier required by the standard */
+        long double val = 7.0;
+        printf("%5.3Lf\n",val);
+#else
+        double val = 7.0;
+        printf("%5.3f\n",val);
+#endif
+
+void
 print_int(val)
         int val
         CODE:
@@ -6853,10 +6865,21 @@ test_Gconvert(SV * number, SV * num_digits)
     PREINIT:
         char buffer[100];
         int len;
+        int extras;
     CODE:
         len = (int) SvIV(num_digits);
-        if (len > 99) croak("Too long a number for test_Gconvert");
-        if (len < 0) croak("Too short a number for test_Gconvert");
+        /* To silence a -Wformat-overflow compiler warning we     *
+         * make allowance for the following characters that may   *
+         * appear, in addition to the digits of the significand:  *
+         * a leading "-", a single byte radix point, "e-", the    *
+         * terminating NULL, and a 3 or 4 digit exponent.         *
+         * Ie, allow 8 bytes if nvtype is "double", otherwise 9   *
+         * bytes (as the exponent could then contain 4 digits ).  */
+        extras = sizeof(NV) == 8 ? 8 : 9;
+        if(len > 100 - extras)
+            croak("Too long a number for test_Gconvert");
+        if (len < 0)
+            croak("Too short a number for test_Gconvert");
         PERL_UNUSED_RESULT(Gconvert(SvNV(number), len,
                  0,    /* No trailing zeroes */
                  buffer));

@@ -652,6 +652,11 @@ PERL_CALLCONV OP *	Perl_ck_trunc(pTHX_ OP *o)
 #define PERL_ARGS_ASSERT_CK_TRUNC	\
 	assert(o)
 
+PERL_CALLCONV OP *	Perl_ck_trycatch(pTHX_ OP *o)
+			__attribute__warn_unused_result__;
+#define PERL_ARGS_ASSERT_CK_TRYCATCH	\
+	assert(o)
+
 PERL_CALLCONV void	Perl_ck_warner(pTHX_ U32 err, const char* pat, ...)
 			__attribute__format__(__printf__,pTHX_2,pTHX_3);
 #define PERL_ARGS_ASSERT_CK_WARNER	\
@@ -1119,7 +1124,7 @@ PERL_CALLCONV void	Perl_free_tied_hv_pool(pTHX);
 #define PERL_ARGS_ASSERT_FREE_TIED_HV_POOL
 PERL_CALLCONV void	Perl_free_tmps(pTHX);
 #define PERL_ARGS_ASSERT_FREE_TMPS
-PERL_CALLCONV SV*	Perl_get_and_check_backslash_N_name(pTHX_ const char* s, const char* const e, const bool is_utf8, const char** error_msg)
+PERL_CALLCONV SV*	Perl_get_and_check_backslash_N_name(pTHX_ const char* s, const char* e, const bool is_utf8, const char** error_msg)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_GET_AND_CHECK_BACKSLASH_N_NAME	\
 	assert(s); assert(e); assert(error_msg)
@@ -2483,6 +2488,11 @@ PERL_CALLCONV SV*	Perl_newSVuv(pTHX_ const UV u)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_NEWSVUV
 
+PERL_CALLCONV OP*	Perl_newTRYCATCHOP(pTHX_ I32 flags, OP* tryblock, OP *catchvar, OP* catchblock)
+			__attribute__warn_unused_result__;
+#define PERL_ARGS_ASSERT_NEWTRYCATCHOP	\
+	assert(tryblock); assert(catchvar); assert(catchblock)
+
 PERL_CALLCONV OP*	Perl_newUNOP(pTHX_ I32 type, I32 flags, OP* first)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_NEWUNOP
@@ -2533,6 +2543,9 @@ PERL_CALLCONV char*	Perl_ninstr(const char* big, const char* bigend, const char*
 #define PERL_ARGS_ASSERT_NINSTR	\
 	assert(big); assert(bigend); assert(little); assert(lend)
 
+PERL_CALLCONV void	Perl_no_bareword_filehandle(pTHX_ const char *fhname);
+#define PERL_ARGS_ASSERT_NO_BAREWORD_FILEHANDLE	\
+	assert(fhname)
 PERL_CALLCONV_NO_RET void	Perl_noperl_die(const char* pat, ...)
 			__attribute__noreturn__
 			__attribute__format__(__printf__,1,2);
@@ -4466,6 +4479,11 @@ PERL_STATIC_INLINE void	Perl_cx_pushsub(pTHX_ PERL_CONTEXT *cx, CV *cv, OP *reto
 	assert(cx); assert(cv)
 #endif
 #ifndef PERL_NO_INLINE_FUNCTIONS
+PERL_STATIC_INLINE void	Perl_cx_pushtry(pTHX_ PERL_CONTEXT *cx, OP *retop);
+#define PERL_ARGS_ASSERT_CX_PUSHTRY	\
+	assert(cx)
+#endif
+#ifndef PERL_NO_INLINE_FUNCTIONS
 PERL_STATIC_INLINE void	Perl_cx_pushwhen(pTHX_ PERL_CONTEXT *cx);
 #define PERL_ARGS_ASSERT_CX_PUSHWHEN	\
 	assert(cx)
@@ -5758,6 +5776,9 @@ STATIC SV *	S_get_ANYOFM_contents(pTHX_ const regnode * n)
 STATIC SV*	S_get_ANYOF_cp_list_for_ssc(pTHX_ const RExC_state_t *pRExC_state, const regnode_charclass* const node);
 #define PERL_ARGS_ASSERT_GET_ANYOF_CP_LIST_FOR_SSC	\
 	assert(pRExC_state); assert(node)
+STATIC U32	S_get_quantifier_value(pTHX_ RExC_state_t *pRExC_state, const char * start, const char * end);
+#define PERL_ARGS_ASSERT_GET_QUANTIFIER_VALUE	\
+	assert(pRExC_state); assert(start); assert(end)
 STATIC bool	S_grok_bslash_N(pTHX_ RExC_state_t *pRExC_state, regnode_offset* nodep, UV *code_point_p, int* cp_count, I32 *flagp, const bool strict, const U32 depth);
 #define PERL_ARGS_ASSERT_GROK_BSLASH_N	\
 	assert(pRExC_state); assert(flagp)
@@ -5811,11 +5832,6 @@ STATIC SV*	S_make_exactf_invlist(pTHX_ RExC_state_t *pRExC_state, regnode *node)
 STATIC I32	S_make_trie(pTHX_ RExC_state_t *pRExC_state, regnode *startbranch, regnode *first, regnode *last, regnode *tail, U32 word_count, U32 flags, U32 depth);
 #define PERL_ARGS_ASSERT_MAKE_TRIE	\
 	assert(pRExC_state); assert(startbranch); assert(first); assert(last); assert(tail)
-STATIC bool	S_new_regcurly(const char *s, const char *e)
-			__attribute__warn_unused_result__;
-#define PERL_ARGS_ASSERT_NEW_REGCURLY	\
-	assert(s); assert(e)
-
 STATIC void	S_nextchar(pTHX_ RExC_state_t *pRExC_state);
 #define PERL_ARGS_ASSERT_NEXTCHAR	\
 	assert(pRExC_state)
@@ -6146,10 +6162,10 @@ PERL_CALLCONV SV*	Perl_invlist_clone(pTHX_ SV* const invlist, SV* newlist);
 	assert(invlist)
 #endif
 #if defined(PERL_IN_REGCOMP_C) || defined(PERL_IN_TOKE_C)
-PERL_CALLCONV bool	Perl_regcurly(const char *s)
+PERL_CALLCONV bool	Perl_regcurly(const char *s, const char *e, const char * result[5])
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_REGCURLY	\
-	assert(s)
+	assert(s); assert(e)
 
 #endif
 #if defined(PERL_IN_REGEXEC_C)
@@ -6213,6 +6229,10 @@ PERL_STATIC_INLINE I32	S_foldEQ_latin1_s2_folded(const char* a, const char* b, I
 #define PERL_ARGS_ASSERT_FOLDEQ_LATIN1_S2_FOLDED	\
 	assert(a); assert(b)
 #endif
+STATIC bool	S_isFOO_lc(pTHX_ const U8 classnum, const U8 character)
+			__attribute__warn_unused_result__;
+#define PERL_ARGS_ASSERT_ISFOO_LC
+
 STATIC bool	S_isFOO_utf8_lc(pTHX_ const U8 classnum, const U8* character, const U8* e)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_ISFOO_UTF8_LC	\
@@ -6293,12 +6313,6 @@ STATIC bool	S_to_byte_substr(pTHX_ regexp * prog);
 STATIC void	S_to_utf8_substr(pTHX_ regexp * prog);
 #define PERL_ARGS_ASSERT_TO_UTF8_SUBSTR	\
 	assert(prog)
-#endif
-#if defined(PERL_IN_REGEXEC_C) || defined(PERL_IN_UTF8_C)
-PERL_CALLCONV bool	Perl_isFOO_lc(pTHX_ const U8 classnum, const U8 character)
-			__attribute__warn_unused_result__;
-#define PERL_ARGS_ASSERT_ISFOO_LC
-
 #endif
 #if defined(PERL_IN_SCOPE_C)
 STATIC void	S_save_pushptri32ptr(pTHX_ void *const ptr1, const I32 i, void *const ptr2, const int type);

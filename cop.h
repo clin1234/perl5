@@ -172,6 +172,7 @@ typedef struct jmpenv JMPENV;
 typedef struct refcounted_he COPHH;
 
 #define COPHH_KEY_UTF8 REFCOUNTED_HE_KEY_UTF8
+#define COPHH_EXISTS REFCOUNTED_HE_EXISTS
 
 /*
 =for apidoc Amx|SV *|cophh_fetch_pvn|const COPHH *cophh|const char *keypv|STRLEN keylen|U32 hash|U32 flags
@@ -227,6 +228,58 @@ string/length pair.
 
 #define cophh_fetch_sv(cophh, key, hash, flags) \
     Perl_refcounted_he_fetch_sv(aTHX_ cophh, key, hash, flags)
+
+/*
+=for apidoc Amx|bool|cophh_exists_pvn|const COPHH *cophh|const char *keypv|STRLEN keylen|U32 hash|U32 flags
+
+Look up the entry in the cop hints hash C<cophh> with the key specified by
+C<keypv> and C<keylen>.  If C<flags> has the C<COPHH_KEY_UTF8> bit set,
+the key octets are interpreted as UTF-8, otherwise they are interpreted
+as Latin-1.  C<hash> is a precomputed hash of the key string, or zero if
+it has not been precomputed.  Returns true if a value exists, and false
+otherwise.
+
+=cut
+*/
+
+#define cophh_exists_pvn(cophh, keypv, keylen, hash, flags) \
+    cBOOL(Perl_refcounted_he_fetch_pvn(aTHX_ cophh, keypv, keylen, hash, flags | COPHH_EXISTS))
+
+/*
+=for apidoc Amx|bool|cophh_exists_pvs|const COPHH *cophh|"key"|U32 flags
+
+Like L</cophh_exists_pvn>, but takes a literal string instead
+of a string/length pair, and no precomputed hash.
+
+=cut
+*/
+
+#define cophh_exists_pvs(cophh, key, flags) \
+    cBOOL(Perl_refcounted_he_fetch_pvn(aTHX_ cophh, STR_WITH_LEN(key), 0, flags | COPHH_EXISTS))
+
+/*
+=for apidoc Amx|bool|cophh_exists_pv|const COPHH *cophh|const char *key|U32 hash|U32 flags
+
+Like L</cophh_exists_pvn>, but takes a nul-terminated string instead of
+a string/length pair.
+
+=cut
+*/
+
+#define cophh_exists_pv(cophh, key, hash, flags) \
+    cBOOL(Perl_refcounted_he_fetch_pv(aTHX_ cophh, key, hash, flags | COPHH_EXISTS))
+
+/*
+=for apidoc Amx|bool|cophh_exists_sv|const COPHH *cophh|SV *key|U32 hash|U32 flags
+
+Like L</cophh_exists_pvn>, but takes a Perl scalar instead of a
+string/length pair.
+
+=cut
+*/
+
+#define cophh_exists_sv(cophh, key, hash, flags) \
+    cBOOL(Perl_refcounted_he_fetch_sv(aTHX_ cophh, key, hash, flags | COPHH_EXISTS))
 
 /*
 =for apidoc Amx|HV *|cophh_2hv|const COPHH *cophh|U32 flags
@@ -446,6 +499,23 @@ Returns the GV associated with the C<COP> C<c>
 Available only on unthreaded perls.  Makes C<pv> the name of the file
 associated with the C<COP> C<c>
 
+=for apidoc Am|HV *|CopSTASH|const COP * c
+Returns the stash associated with C<c>.
+
+=for apidoc Am|bool|CopSTASH_eq|const COP * c|const HV * hv
+Returns a boolean as to whether or not C<hv> is the stash associated with C<c>.
+
+=for apidoc Am|bool|CopSTASH_set|COP * c|HV * hv
+Set the stash associated with C<c> to C<hv>.
+
+=for apidoc Am|char *|CopSTASHPV|const COP * c
+Returns the package name of the stash associated with C<c>, or C<NULL> if no
+associated stash
+
+=for apidoc Am|void|CopSTASHPV_set|COP * c|const char * pv
+Set the package name of the stash associated with C<c>, to the NUL-terminated C
+string C<p>, creating the package if necessary.
+
 =cut
 */
 
@@ -558,6 +628,58 @@ string/length pair.
 
 #define cop_hints_fetch_sv(cop, key, hash, flags) \
     cophh_fetch_sv(CopHINTHASH_get(cop), key, hash, flags)
+
+/*
+=for apidoc Am|bool|cop_hints_exists_pvn|const COP *cop|const char *keypv|STRLEN keylen|U32 hash|U32 flags
+
+Look up the hint entry in the cop C<cop> with the key specified by
+C<keypv> and C<keylen>.  If C<flags> has the C<COPHH_KEY_UTF8> bit set,
+the key octets are interpreted as UTF-8, otherwise they are interpreted
+as Latin-1.  C<hash> is a precomputed hash of the key string, or zero if
+it has not been precomputed.  Returns true if a value exists, and false
+otherwise.
+
+=cut
+*/
+
+#define cop_hints_exists_pvn(cop, keypv, keylen, hash, flags) \
+    cophh_exists_pvn(CopHINTHASH_get(cop), keypv, keylen, hash, flags)
+
+/*
+=for apidoc Am|bool|cop_hints_exists_pvs|const COP *cop|"key"|U32 flags
+
+Like L</cop_hints_exists_pvn>, but takes a literal string
+instead of a string/length pair, and no precomputed hash.
+
+=cut
+*/
+
+#define cop_hints_exists_pvs(cop, key, flags) \
+    cophh_exists_pvs(CopHINTHASH_get(cop), key, flags)
+
+/*
+=for apidoc Am|bool|cop_hints_exists_pv|const COP *cop|const char *key|U32 hash|U32 flags
+
+Like L</cop_hints_exists_pvn>, but takes a nul-terminated string instead
+of a string/length pair.
+
+=cut
+*/
+
+#define cop_hints_exists_pv(cop, key, hash, flags) \
+    cophh_exists_pv(CopHINTHASH_get(cop), key, hash, flags)
+
+/*
+=for apidoc Am|bool|cop_hints_exists_sv|const COP *cop|SV *key|U32 hash|U32 flags
+
+Like L</cop_hints_exists_pvn>, but takes a Perl scalar instead of a
+string/length pair.
+
+=cut
+*/
+
+#define cop_hints_exists_sv(cop, key, hash, flags) \
+    cophh_exists_sv(CopHINTHASH_get(cop), key, hash, flags)
 
 /*
 =for apidoc Am|HV *|cop_hints_2hv|const COP *cop|U32 flags
@@ -923,7 +1045,7 @@ struct context {
                              or plain block { ...; } */
 #define CXt_SUB		9
 #define CXt_FORMAT     10
-#define CXt_EVAL       11
+#define CXt_EVAL       11 /* eval'', eval{}, try{} */
 #define CXt_SUBST      12
 /* SUBST doesn't feature in all switch statements.  */
 
@@ -936,7 +1058,8 @@ struct context {
 
 /* private flags for CXt_EVAL */
 #define CXp_REAL	0x20	/* truly eval'', not a lookalike */
-#define CXp_TRYBLOCK	0x40	/* eval{}, not eval'' or similar */
+#define CXp_EVALBLOCK	0x40	/* eval{}, not eval'' or similar */
+#define CXp_TRY         0x80    /* try {} block */
 
 /* private flags for CXt_LOOP */
 
@@ -958,10 +1081,16 @@ struct context {
 #define CxMULTICALL(c)	((c)->cx_type & CXp_MULTICALL)
 #define CxREALEVAL(c)	(((c)->cx_type & (CXTYPEMASK|CXp_REAL))		\
 			 == (CXt_EVAL|CXp_REAL))
-#define CxTRYBLOCK(c)	(((c)->cx_type & (CXTYPEMASK|CXp_TRYBLOCK))	\
-			 == (CXt_EVAL|CXp_TRYBLOCK))
+#define CxEVALBLOCK(c)	(((c)->cx_type & (CXTYPEMASK|CXp_EVALBLOCK))	\
+			 == (CXt_EVAL|CXp_EVALBLOCK))
+#define CxTRY(c)        (((c)->cx_type & (CXTYPEMASK|CXp_TRY))          \
+                         == (CXt_EVAL|CXp_TRY))
 #define CxFOREACH(c)	(   CxTYPE(cx) >= CXt_LOOP_ARY                  \
                          && CxTYPE(cx) <= CXt_LOOP_LIST)
+
+/* deprecated old name before real try/catch was added */
+#define CXp_TRYBLOCK    CXp_EVALBLOCK
+#define CxTRYBLOCK(c)   CxEVALBLOCK(c)
 
 #define CXINC (cxstack_ix < cxstack_max ? ++cxstack_ix : (cxstack_ix = cxinc()))
 

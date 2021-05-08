@@ -425,10 +425,8 @@ S_regcp_restore(pTHX_ regexp *rex, I32 ix, U32 *maxopenparen_p _pDEPTH)
 
 #define regcpblow(cp) LEAVE_SCOPE(cp)	/* Ignores regcppush()ed data. */
 
-#ifndef PERL_IN_XSUB_RE
-
-bool
-Perl_isFOO_lc(pTHX_ const U8 classnum, const U8 character)
+STATIC bool
+S_isFOO_lc(pTHX_ const U8 classnum, const U8 character)
 {
     /* Returns a boolean as to whether or not 'character' is a member of the
      * Posix character class given by 'classnum' that should be equivalent to a
@@ -467,8 +465,6 @@ Perl_isFOO_lc(pTHX_ const U8 classnum, const U8 character)
     NOT_REACHED; /* NOTREACHED */
     return FALSE;
 }
-
-#endif
 
 PERL_STATIC_INLINE I32
 S_foldEQ_latin1_s2_folded(const char *s1, const char *s2, I32 len)
@@ -3757,8 +3753,6 @@ Perl_regexec_flags(pTHX_ REGEXP * const rx, char *stringarg, char *strend,
             reginfo->info_aux_eval = reginfo->info_aux->info_aux_eval = NULL;
     }
 
-    /* If there is a "must appear" string, look for it. */
-
     if (PL_curpm && (PM_GETRE(PL_curpm) == rx)) {
         /* We have to be careful. If the previous successful match
            was from this regex we don't want a subsequent partially
@@ -3783,8 +3777,8 @@ Perl_regexec_flags(pTHX_ REGEXP * const rx, char *stringarg, char *strend,
     if (prog->recurse_locinput)
         Zero(prog->recurse_locinput,prog->nparens + 1, char *);
 
-    /* Simplest case: anchored match need be tried only once, or with
-     * MBOL, only at the beginning of each line.
+    /* Simplest case: anchored match (but not \G) need be tried only once,
+     * or with MBOL, only at the beginning of each line.
      *
      * Note that /.*.../ sets PREGf_IMPLICIT|MBOL, while /.*.../s sets
      * PREGf_IMPLICIT|SBOL. The idea is that with /.*.../s, if it doesn't
@@ -3828,6 +3822,7 @@ Perl_regexec_flags(pTHX_ REGEXP * const rx, char *stringarg, char *strend,
         goto phooey;
     } /* end anchored search */
 
+    /* anchored \G match */
     if (prog->intflags & PREGf_ANCH_GPOS)
     {
         /* PREGf_ANCH_GPOS should never be true if PREGf_GPOS_SEEN is not true */
@@ -3842,6 +3837,7 @@ Perl_regexec_flags(pTHX_ REGEXP * const rx, char *stringarg, char *strend,
     }
 
     /* Messy cases:  unanchored match. */
+
     if ((prog->anchored_substr || prog->anchored_utf8) && prog->intflags & PREGf_SKIP) {
 	/* we have /x+whatever/ */
 	/* it must be a one character string (XXXX Except is_utf8_pat?) */
@@ -4527,7 +4523,7 @@ S_setup_EXACTISH_ST(pTHX_ const regnode * const text_node,
 
     /* Here and below, '15' is the value of UTF8_MAXBYTES_CASE, which requires at least :e
      */
-    U8 matches[MAX_MATCHES][UTF8_MAXBYTES_CASE + 1] = { 0 };
+    U8 matches[MAX_MATCHES][UTF8_MAXBYTES_CASE + 1] = { { 0 } };
     U8 lengths[MAX_MATCHES] = { 0 };
 
     U8 index_of_longest = 0;
@@ -4694,23 +4690,36 @@ S_setup_EXACTISH_ST(pTHX_ const regnode * const text_node,
      *
      * Everything generally matches at least itself.  But if there is a
      * UTF8ness mismatch, we have to convert to that of the target string. */
-    if (utf8_pat == utf8_target || UTF8_IS_INVARIANT(*pat)) {
-        lengths[0] = MIN(pat_len, C_ARRAY_LENGTH(matches[0]));
-        Copy(pat, matches[0], lengths[0], U8);
+    if (UTF8_IS_INVARIANT(*pat)) {  /* Immaterial if either is in UTF-8 */
+        matches[0][0] = pat[0];
+        lengths[0] = 1;
         m->count++;
     }
-    else if (utf8_target) { /* target is UTF-8; pattern isn't */
-        matches[0][0] = UTF8_EIGHT_BIT_HI(pat[0]);
-        matches[0][1] = UTF8_EIGHT_BIT_LO(pat[0]);
-        lengths[0] = 2;
-        m->count++;
-    }
-    else { /* pattern is UTF-8, target isn't */
-        if (UTF8_IS_DOWNGRADEABLE_START(*pat)) {
-            matches[0][0] = EIGHT_BIT_UTF8_TO_NATIVE(pat[0], pat[1]);
-            lengths[0] = 1;
+    else if (utf8_target) {
+        if (utf8_pat) {
+            lengths[0] = UTF8SKIP(pat);
+            Copy(pat, matches[0], lengths[0], U8);
             m->count++;
         }
+        else {  /* target is UTF-8, pattern isn't */
+            matches[0][0] = UTF8_EIGHT_BIT_HI(pat[0]);
+            matches[0][1] = UTF8_EIGHT_BIT_LO(pat[0]);
+            lengths[0] = 2;
+            m->count++;
+        }
+    }
+    else if (! utf8_pat) {  /* Neither is UTF-8 */
+        matches[0][0] = pat[0];
+        lengths[0] = 1;
+        m->count++;
+    }
+    else     /* target isn't UTF-8; pattern is.  No match possible unless the
+                pattern's first character can fit in a byte */
+         if (UTF8_IS_DOWNGRADEABLE_START(*pat))
+    {
+        matches[0][0] = EIGHT_BIT_UTF8_TO_NATIVE(pat[0], pat[1]);
+        lengths[0] = 1;
+        m->count++;
     }
 
     /* Here we have taken care of any necessary node-type changes */
@@ -4849,8 +4858,8 @@ S_setup_EXACTISH_ST(pTHX_ const regnode * const text_node,
                 lengths[m->count] = UVCHR_SKIP(fold_from);
                 m->count++;
             }
-            else { /* Non-UTF8 target: any code point above 255
-                      can't appear in it */
+            else { /* Non-UTF8 target: no code point above 255 can appear in it
+                    */
                 if (fold_from > 255) {
                     continue;
                 }
@@ -4973,7 +4982,10 @@ S_setup_EXACTISH_ST(pTHX_ const regnode * const text_node,
         if (m->count > 1) { /* No need to sort a single entry */
             for (i = 0; i < (PERL_UINT_FAST8_T) m->count; i++) {
 
-                /* Keep the same order for all but the longest */
+                /* Keep the same order for all but the longest.  (If the
+                 * asserts fail, it could be because m->matches is declared too
+                 * short, either because of a new Unicode release, or an
+                 * overlooked test case, or it could be a bug.) */
                 if (i != index_of_longest) {
                     assert(cur_pos + lengths[i] <= C_ARRAY_LENGTH(m->matches));
                     Copy(matches[i], m->matches + cur_pos, lengths[i], U8);
@@ -9284,7 +9296,7 @@ NULL
 
                 n = (utf8_target)
                     ? utf8_length((U8 *) ST.oldloc, (U8 *) locinput)
-                    : locinput - ST.oldloc;
+                    : (STRLEN) (locinput - ST.oldloc);
 
 
                 /* Here is at the beginning of a character that meets the mask
@@ -10019,7 +10031,9 @@ S_regrepeat(pTHX_ regexp *prog, char **startposp, const regnode *p,
                     if (definitive_len == 1) {
                         const char * orig_scan = scan;
 
-                        this_eol = MIN(this_eol, scan + max - hardcount);
+                        if (this_eol - (scan - hardcount) > max) {
+                            this_eol = scan - hardcount + max;
+                        }
 
                         /* Use different routines depending on whether it's an
                          * exact match or matches with a mask */

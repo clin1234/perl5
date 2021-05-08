@@ -1834,8 +1834,8 @@ Usage: $me [-dehrsEKOSV] [-f config.sh] [-D symbol] [-D symbol=value]
   -r : reuse C symbols value if possible (skips costly nm extraction).
   -s : silent mode, only echoes questions and essential information.
   -D : define symbol to have some value:
-         -D symbol         symbol gets the value 'define'
-         -D symbol=value   symbol gets the value 'value'
+         -D symbol                symbol gets the value 'define'
+         -D symbol='some value'   symbol is set to 'some value'
        common used examples (see INSTALL for more info):
          -Duse64bitint            use 64bit integers
          -Duse64bitall            use 64bit integers and pointers
@@ -4863,27 +4863,35 @@ esac
 # Note that ccname for clang is also gcc.
 case "$ccname" in
     gcc)
+	realpath=`which realpath 2>/dev/null | sed 's/no realpath in.*//'`
 	$echo 'extern int foo;' > try.c
 	set X `$cppstdin -v try.c 2>&1 | $awk '/^#include </,/^End of search /'|$cppfilter $grep '/include'`
 	shift
+	inclinpth=""
 	if $test $# -gt 0; then
-	    incpth="$incpth $*"
-	    incpth="`$echo $incpth|$sed 's/^ //'`"
 	    for i in $*; do
-		j="`$echo $i|$sed 's,/include$,/lib,'`"
+		case $realpath in
+		    */realpath) i=`$realpath $i` ;;
+		esac
+		incpth="$incpth $i"
+		j="`$echo $i | $sed 's,/include[^/]*,/lib,'`"
 		if $test -d $j; then
-		    libpth="$libpth $j"
+		    inclibpth="$inclibpth $j"
 		fi
 	    done
-	    libpth="`$echo $libpth|$sed 's/^ //'`"
-	    for xxx in $libpth $loclibpth $plibpth $glibpth; do
+	    incpth="`$echo $incpth | $sed 's/^ //'`"
+	    for xxx in $inclibpth $loclibpth $plibpth $glibpth; do
 		if $test -d $xxx; then
+		    case $realpath in
+			*/realpath) xxx=`$realpath $xxx` ;;
+		    esac
 		    case " $libpth " in
 		    *" $xxx "*) ;;
 		    *) libpth="$libpth $xxx";;
 		    esac
 		fi
 	    done
+	    libpth="`$echo $libpth | $sed 's/^ //'`"
 	fi
 	$rm -f try.c
 	case "$usrinc" in
@@ -6894,9 +6902,9 @@ int main() {
      * The Motorola 68881 had another "extended precision" format:
      * sign:1 exp:15 zero:16 integer:1 mantissa:63
      * for total of 96 bits of bytes.  The zero bits were unused.
-     * See "M68000 FAMILY PROGRAMMER’S REFERENCE MANUAL" for more details.
-     * If it ever becomes relevant, this format should be allocated
-     * a new doublekind code since it's quite different from the Intel x87.
+     * See "M68000 FAMILY PROGRAMMER'S REFERENCE MANUAL" for more details.
+     * If it ever becomes relevant, this format should be allocated a
+     * new doublekind code since it is quite different from the Intel x87.
      */
     printf("4\n");
     exit(0);
@@ -10374,6 +10382,15 @@ void checkit(const char *expect, char *got)
 	}
 }
 
+void lencheck(int expect, int got)
+{
+    if (expect != got) {
+		printf("%s length mismatch:  Expected %d, got %d\n",
+			myname, expect, got);
+		exit(1);
+	}
+}
+
 int main()
 {
 	char buf[64];
@@ -10445,6 +10462,12 @@ int main()
 	    checkit("1e+034", buf); /* for Microsoft */
 	else
 	    checkit("1e+34", buf);
+
+	/* Test for an Ubuntu/Debian bug in gcvt and qgcvt. See:        *
+	 * https://bugs.launchpad.net/ubuntu/+source/glibc/+bug/1899553 */
+
+	Gconvert((DOUBLETYPE)0.4, 53, 0, buf);
+	lencheck(55, (int)strlen(buf));
 
 	/* For Perl, if you add additional tests here, also add them to
 	 * t/base/num.t for benefit of platforms not using Configure or
@@ -14263,19 +14286,19 @@ EOCP
 val=
 set try
 if eval $compile_ok; then
-        $run ./try
-        rc=$?
-        case "$rc" in
-            0) echo "getenv() didn't destroy another thread's buffer" >&4
-	       val=$define
-               ;;
-            1) echo "getenv() does destroy another thread's buffer" >&4
-	       val=$undef
-               ;;
-            *) echo "Couldn't determine if getenv() destroys another thread's return value (code=$rc); assuming it does" >&4
-	       val=$undef
-               ;;
-        esac
+    $run ./try
+    rc=$?
+    case "$rc" in
+	0) echo "getenv() didn't destroy another thread's buffer" >&4
+	   val=$define
+	   ;;
+	1) echo "getenv() does destroy another thread's buffer" >&4
+	   val=$undef
+	   ;;
+	*) echo "Couldn't determine if getenv() destroys another thread's return value (code=$rc); assuming it does" >&4
+	   val=$undef
+	   ;;
+    esac
 else
     echo "(I can't seem to compile the test program.)" >&4
     echo "Assuming that your C library's getenv destroys another thread's return value." >&4

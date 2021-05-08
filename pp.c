@@ -1973,6 +1973,22 @@ PP(pp_subtract)
 
 #define IV_BITS (IVSIZE * 8)
 
+/* Taking the right operand of bitwise shift operators, returns an int
+ * indicating the shift amount clipped to the range [-IV_BITS, +IV_BITS].
+ */
+static int
+S_shift_amount(pTHX_ SV *const svr)
+{
+    const IV iv = SvIV_nomg(svr);
+
+    /* Note that [INT_MIN, INT_MAX] cannot be used as the clipping bound;
+     * INT_MIN will cause overflow in "shift = -shift;" in S_{iv,uv}_shift.
+     */
+    if (SvIsUV(svr))
+        return SvUVX(svr) > IV_BITS ? IV_BITS : (int)SvUVX(svr);
+    return iv < -IV_BITS ? -IV_BITS : iv > IV_BITS ? IV_BITS : (int)iv;
+}
+
 static UV S_uv_shift(UV uv, int shift, bool left)
 {
    if (shift < 0) {
@@ -1997,7 +2013,7 @@ static IV S_iv_shift(IV iv, int shift, bool left)
     }
 
     /* For left shifts, perl 5 has chosen to treat the value as unsigned for
-     * the * purposes of shifting, then cast back to signed.  This is very
+     * the purposes of shifting, then cast back to signed.  This is very
      * different from Raku:
      *
      * $ raku -e 'say -2 +< 5'
@@ -2007,9 +2023,6 @@ static IV S_iv_shift(IV iv, int shift, bool left)
      * 18446744073709551552
      * */
     if (left) {
-        if (iv == IV_MIN) { /* Casting this to a UV is undefined behavior */
-            return 0;
-        }
         return (IV) (((UV) iv) << shift);
     }
 
@@ -2029,7 +2042,7 @@ PP(pp_left_shift)
     svr = POPs;
     svl = TOPs;
     {
-      const IV shift = SvIV_nomg(svr);
+      const int shift = S_shift_amount(aTHX_ svr);
       if (PL_op->op_private & HINT_INTEGER) {
           SETi(IV_LEFT_SHIFT(SvIV_nomg(svl), shift));
       }
@@ -2047,7 +2060,7 @@ PP(pp_right_shift)
     svr = POPs;
     svl = TOPs;
     {
-      const IV shift = SvIV_nomg(svr);
+      const int shift = S_shift_amount(aTHX_ svr);
       if (PL_op->op_private & HINT_INTEGER) {
 	  SETi(IV_RIGHT_SHIFT(SvIV_nomg(svl), shift));
       }
@@ -4461,6 +4474,8 @@ PP(pp_lc)
         }
     }
 
+#else
+    PERL_UNUSED_VAR(has_turkic_I);
 #endif
 
     /* Overloaded values may have toggled the UTF-8 flag on source, so we need
@@ -4813,7 +4828,7 @@ PP(pp_fc)
                         do {
                             extra++;
 
-                            s_peek = (U8 *) memchr(s_peek + 1, 'i',
+                            s_peek = (U8 *) memchr(s_peek + 1, 'I',
                                                    send - (s_peek + 1));
                         } while (s_peek != NULL);
                     }
@@ -4828,8 +4843,14 @@ PP(pp_fc)
                                               + 1 /* Trailing NUL */ );
                     d = (U8*)SvPVX(dest) + len;
 
-                    *d++ = UTF8_TWO_BYTE_HI(GREEK_SMALL_LETTER_MU);
-                    *d++ = UTF8_TWO_BYTE_LO(GREEK_SMALL_LETTER_MU);
+                    if (*s == 'I') {
+                        *d++ = UTF8_TWO_BYTE_HI(LATIN_SMALL_LETTER_DOTLESS_I);
+                        *d++ = UTF8_TWO_BYTE_LO(LATIN_SMALL_LETTER_DOTLESS_I);
+                    }
+                    else {
+                        *d++ = UTF8_TWO_BYTE_HI(GREEK_SMALL_LETTER_MU);
+                        *d++ = UTF8_TWO_BYTE_LO(GREEK_SMALL_LETTER_MU);
+                    }
                     s++;
 
                     for (; s < send; s++) {
@@ -5999,13 +6020,13 @@ PP(pp_split)
     I32 trailing_empty = 0;
     const char *orig;
     const IV origlimit = limit;
-    I32 realarray = 0;
+    bool realarray = 0;
     I32 base;
     const U8 gimme = GIMME_V;
     bool gimme_scalar;
     I32 oldsave = PL_savestack_ix;
-    U32 make_mortal = SVs_TEMP;
-    bool multiline = 0;
+    U32 flags = (do_utf8 ? SVf_UTF8 : 0) |
+         SVs_TEMP; /* Make mortal SVs by default */
     MAGIC *mg = NULL;
 
     rx = PM_GETRE(pm);
@@ -6045,7 +6066,7 @@ PP(pp_split)
 	    PUSHMARK(SP);
 	    XPUSHs(SvTIED_obj(MUTABLE_SV(ary), mg));
 	} else {
-	    make_mortal = 0;
+	    flags &= ~SVs_TEMP; /* SVs will not be mortal */
 	}
     }
 
@@ -6068,9 +6089,6 @@ PP(pp_split)
 	    while (s < strend && isSPACE(*s))
 		s++;
 	}
-    }
-    if (RX_EXTFLAGS(rx) & RXf_PMf_MULTILINE) {
-	multiline = 1;
     }
 
     gimme_scalar = gimme == G_SCALAR && !ary;
@@ -6113,8 +6131,7 @@ PP(pp_split)
 		else
 		    trailing_empty = 0;
 	    } else {
-		dstr = newSVpvn_flags(s, m-s,
-				      (do_utf8 ? SVf_UTF8 : 0) | make_mortal);
+		dstr = newSVpvn_flags(s, m-s, flags);
 		XPUSHs(dstr);
 	    }
 
@@ -6158,8 +6175,7 @@ PP(pp_split)
 		else
 		    trailing_empty = 0;
 	    } else {
-		dstr = newSVpvn_flags(s, m-s,
-				      (do_utf8 ? SVf_UTF8 : 0) | make_mortal);
+		dstr = newSVpvn_flags(s, m-s, flags);
 		XPUSHs(dstr);
 	    }
 	    s = m;
@@ -6203,12 +6219,12 @@ PP(pp_split)
                 while (--limit) {
                     m = s;
                     s += UTF8SKIP(s);
-                    dstr = newSVpvn_flags(m, s-m, SVf_UTF8 | make_mortal);
+                    dstr = newSVpvn_flags(m, s-m, flags);
                     PUSHs(dstr);
                 }
             } else {
                 while (--limit) {
-                    dstr = newSVpvn_flags(s, 1, make_mortal);
+                    dstr = newSVpvn_flags(s, 1, flags);
                     PUSHs(dstr);
                     s++;
                 }
@@ -6237,8 +6253,7 @@ PP(pp_split)
 		    else
 			trailing_empty = 0;
 		} else {
-		    dstr = newSVpvn_flags(s, m-s,
-					 (do_utf8 ? SVf_UTF8 : 0) | make_mortal);
+		    dstr = newSVpvn_flags(s, m-s, flags);
 		    XPUSHs(dstr);
 		}
 		/* The rx->minlen is in characters but we want to step
@@ -6250,6 +6265,8 @@ PP(pp_split)
 	    }
 	}
 	else {
+	    const bool multiline = (RX_EXTFLAGS(rx) & RXf_PMf_MULTILINE) ? 1 : 0;
+
 	    while (s < strend && --limit &&
 	      (m = fbm_instr((unsigned char*)s, (unsigned char*)strend,
 			     csv, multiline ? FBMrf_MULTILINE : 0)) )
@@ -6261,8 +6278,7 @@ PP(pp_split)
 		    else
 			trailing_empty = 0;
 		} else {
-		    dstr = newSVpvn_flags(s, m-s,
-					 (do_utf8 ? SVf_UTF8 : 0) | make_mortal);
+		    dstr = newSVpvn_flags(s, m-s, flags);
 		    XPUSHs(dstr);
 		}
 		/* The rx->minlen is in characters but we want to step
@@ -6298,8 +6314,7 @@ PP(pp_split)
 		else
 		    trailing_empty = 0;
 	    } else {
-		dstr = newSVpvn_flags(s, m-s,
-				      (do_utf8 ? SVf_UTF8 : 0) | make_mortal);
+		dstr = newSVpvn_flags(s, m-s, flags);
 		XPUSHs(dstr);
 	    }
 	    if (RX_NPARENS(rx)) {
@@ -6319,9 +6334,7 @@ PP(pp_split)
 			    trailing_empty = 0;
 		    } else {
 			if (m >= orig && s >= orig) {
-			    dstr = newSVpvn_flags(s, m-s,
-						 (do_utf8 ? SVf_UTF8 : 0)
-						  | make_mortal);
+			    dstr = newSVpvn_flags(s, m-s, flags);
 			}
 			else
 			    dstr = &PL_sv_undef;  /* undef, not "" */
@@ -6344,7 +6357,7 @@ PP(pp_split)
     if (s < strend || (iters && origlimit)) {
 	if (!gimme_scalar) {
 	    const STRLEN l = strend - s;
-	    dstr = newSVpvn_flags(s, l, (do_utf8 ? SVf_UTF8 : 0) | make_mortal);
+	    dstr = newSVpvn_flags(s, l, flags);
 	    XPUSHs(dstr);
 	}
 	iters++;
@@ -6354,7 +6367,7 @@ PP(pp_split)
 	    iters -= trailing_empty;
 	} else {
 	    while (iters > 0 && (!TOPs || !SvANY(TOPs) || SvCUR(TOPs) == 0)) {
-		if (TOPs && !make_mortal)
+		if (TOPs && !(flags & SVs_TEMP))
 		    sv_2mortal(TOPs);
 		*SP-- = NULL;
 		iters--;
@@ -7145,10 +7158,17 @@ PP(pp_argcheck)
     too_few = (argc < (params - opt_params));
 
     if (UNLIKELY(too_few || (!slurpy && argc > params)))
-        /* diag_listed_as: Too few arguments for subroutine '%s' */
-        /* diag_listed_as: Too many arguments for subroutine '%s' */
-        Perl_croak_caller("Too %s arguments for subroutine '%" SVf "'",
-                          too_few ? "few" : "many", S_find_runcv_name());
+
+        /* diag_listed_as: Too few arguments for subroutine '%s' (got %d; expected %d) */
+        /* diag_listed_as: Too few arguments for subroutine '%s' (got %d; expected at least %d) */
+        /* diag_listed_as: Too many arguments for subroutine '%s' (got %d; expected %d) */
+        /* diag_listed_as: Too many arguments for subroutine '%s' (got %d; expected at most %d)*/
+        Perl_croak_caller("Too %s arguments for subroutine '%" SVf "' (got %" UVuf "; expected %s%" UVuf ")",
+                          too_few ? "few" : "many",
+                          S_find_runcv_name(),
+                          argc,
+                          too_few ? (slurpy || opt_params ? "at least " : "") : (opt_params ? "at most " : ""),
+                          too_few ? (params - opt_params) : params);
 
     if (UNLIKELY(slurpy == '%' && argc > params && (argc - params) % 2))
         /* diag_listed_as: Odd name/value argument for subroutine '%s' */

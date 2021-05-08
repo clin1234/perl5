@@ -341,8 +341,8 @@ $   DECK
  "-r" : reuse C symbols value if possible (skips costly nm extraction).*
  "-s" : silent mode, only echoes questions and essential information.
  -"D" : define symbol to have some value:                              *
-         -"Dsymbol"         symbol gets the value 'define'
-         -"Dsymbol=value"   symbol gets the value 'value'
+         -"Dsymbol"             symbol gets the value 'define'
+         -"Dsymbol=some value"  symbol is set to "some value"
   -E  : stop at the end of questions, after having produced config.sh. *
   -K  : do not use unless you know what you are doing.
   -O  : let -D and -U override definitions from loaded configuration file. *
@@ -7275,6 +7275,7 @@ $ IF unlink_all_versions .OR. unlink_all_versions .EQS. "define" THEN -
 $ IF d_sockaddr_sa_len .EQS. "define" then WC "#define _SOCKADDR_LEN 1"
 $ IF ccname .EQS. "CXX" then WC "#define NO_ENVIRON_ARRAY"
 $ IF ccname .EQS. "CXX" then WC "#define VMS" ! only has __VMS by default
+$ WC "#define _PTHREAD_EXC_INCL_CLEAN" ! avoid conflict between DECthreads TRY/CATCH and Perl TRY/CATCH
 $ CLOSE CONFIG
 $!
 $ echo4 "Doing variable substitutions on .SH files..."

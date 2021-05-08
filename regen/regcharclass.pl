@@ -1270,11 +1270,11 @@ sub _render {
     my $str= "$lb$cond ?$yes$ind: $no$rb";
     if (length $str > 6000) {
         push @$submacros, sprintf "#define $def\n( %s )", "_part"
-                                  . (my $yes_idx= 0+@$submacros), $yes;
+                                  . (my $yes_idx= 0+@$submacros) . "_", $yes;
         push @$submacros, sprintf "#define $def\n( %s )", "_part"
-                                  . (my $no_idx= 0+@$submacros), $no;
-        return sprintf "%s%s ? $def : $def%s", $lb, $cond, "_part$yes_idx",
-                                                            "_part$no_idx", $rb;
+                                  . (my $no_idx= 0+@$submacros) . "_", $no;
+        return sprintf "%s%s ? $def : $def%s", $lb, $cond,
+                                    "_part${yes_idx}_", "_part${no_idx}_", $rb;
     }
     return $str;
 }
@@ -1375,11 +1375,11 @@ if ( !caller ) {
     if ( $path eq '-' ) {
         $out_fh= \*STDOUT;
     } else {
-	$out_fh = open_new( $path );
+        $out_fh = open_new( $path );
     }
     print $out_fh read_only_top( lang => 'C', by => $0,
-				 file => 'regcharclass.h', style => '*',
-				 copyright => [2007, 2011],
+                                 file => 'regcharclass.h', style => '*',
+                                 copyright => [2007, 2011],
                                  final => <<EOF,
 WARNING: These macros are for internal Perl core use only, and may be
 changed or removed without notice.
@@ -1478,7 +1478,7 @@ EOF
     print $out_fh "\n#endif /* PERL_REGCHARCLASS_H_ */\n";
 
     if($path eq '-') {
-	print $out_fh "/* ex: set ro: */\n";
+        print $out_fh "/* ex: set ro: */\n";
     } else {
         # Some of the sources for these macros come from Unicode tables
         my $sources_list = "lib/unicore/mktables.lst";
