@@ -136,6 +136,10 @@ Generates info for Module::CoreList from this perl tree.
 
 List of test files to ignore/skip for deparse tests.
 
+=head2 F<docs-team-charter.pod>
+
+The charter of the Perl Documentation Team
+
 =head2 F<epigraphs.pod>
 
 List of Perl release epigraphs.
@@ -226,10 +230,6 @@ command-line.
 =head2 F<makemeta>
 
 This script creates F<META.yml> and F<META.json> files.
-
-=head2 F<make_modlib_cpan.pl>
-
-This script generates the list of registered CPAN sites in F<perlmodlib.PL>.
 
 =head2 F<makerel>
 

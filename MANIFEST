@@ -793,7 +793,7 @@ cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_DOS.pm			MakeMaker methods for DOS
 cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_MacOS.pm		MakeMaker methods for MacOS
 cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_NW5.pm			MakeMaker methods for NetWare
 cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_OS2.pm			MakeMaker methods for OS/2
-cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_OS390.pm
+cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_OS390.pm		MakeMaker methods for OS 390
 cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_QNX.pm			MakeMaker methods for QNX
 cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_Unix.pm			MakeMaker methods for Unix
 cpan/ExtUtils-MakeMaker/lib/ExtUtils/MM_UWIN.pm			MakeMaker methods for U/WIN
@@ -1975,6 +1975,7 @@ cpan/Scalar-List-Utils/t/isvstring.t		Scalar::Util
 cpan/Scalar-List-Utils/t/lln.t			Scalar::Util
 cpan/Scalar-List-Utils/t/max.t			List::Util
 cpan/Scalar-List-Utils/t/maxstr.t		List::Util
+cpan/Scalar-List-Utils/t/mesh.t
 cpan/Scalar-List-Utils/t/min.t			List::Util
 cpan/Scalar-List-Utils/t/minstr.t		List::Util
 cpan/Scalar-List-Utils/t/openhan.t		Scalar::Util
@@ -1998,6 +1999,7 @@ cpan/Scalar-List-Utils/t/tainted.t		Scalar::Util
 cpan/Scalar-List-Utils/t/uniq.t			Scalar::Util
 cpan/Scalar-List-Utils/t/uniqnum.t
 cpan/Scalar-List-Utils/t/weak.t			Scalar::Util
+cpan/Scalar-List-Utils/t/zip.t
 cpan/Socket/Makefile.PL			Socket extension makefile writer
 cpan/Socket/Socket.pm			Socket extension Perl module
 cpan/Socket/Socket.xs			Socket extension external subroutines
@@ -2498,6 +2500,7 @@ cpan/Test-Simple/t/regression/errors_facet.t
 cpan/Test-Simple/t/regression/fork_first.t
 cpan/Test-Simple/t/regression/inherit_trace.t
 cpan/Test-Simple/t/regression/no_name_in_subtest.t
+cpan/Test-Simple/t/regression/skip_reason_object_ipc.t
 cpan/Test-Simple/t/regression/todo_and_facets.t
 cpan/Test-Simple/t/Test2/acceptance/try_it_done_testing.t
 cpan/Test-Simple/t/Test2/acceptance/try_it_fork.t
@@ -3020,6 +3023,7 @@ dist/constant/t/utf8.t		Test Unicode constants under utf8 pragma
 dist/Data-Dumper/Changes	Data pretty printer, changelog
 dist/Data-Dumper/Dumper.pm	Data pretty printer, module
 dist/Data-Dumper/Dumper.xs	Data pretty printer, externals
+dist/Data-Dumper/Makefile.PL	Data pretty printer, makefile writer
 dist/Data-Dumper/t/bless.t	See if Data::Dumper works
 dist/Data-Dumper/t/bless_var_method.t	See if Data::Dumper::Bless works
 dist/Data-Dumper/t/bugs.t	See if Data::Dumper works
@@ -5231,6 +5235,9 @@ pod/perl5302delta.pod		Perl changes in version 5.30.2
 pod/perl5303delta.pod		Perl changes in version 5.30.3
 pod/perl5320delta.pod		Perl changes in version 5.32.0
 pod/perl5321delta.pod		Perl changes in version 5.32.1
+pod/perl5340delta.pod		Perl changes in version 5.34.0
+pod/perl5350delta.pod		Perl changes in version 5.35.0
+pod/perl5351delta.pod		Perl changes in version 5.35.1
 pod/perl561delta.pod		Perl changes in version 5.6.1
 pod/perl56delta.pod		Perl changes in version 5.6
 pod/perl581delta.pod		Perl changes in version 5.8.1
@@ -5367,6 +5374,7 @@ Porting/corelist.pl		Generates data for Module::CoreList
 Porting/corelist-diff		Tool to produce corelist diffs
 Porting/corelist-perldelta.pl	Generates data perldelta from Module::CoreList
 Porting/deparse-skips.txt	List of test files to ignore/skip for deparse tests.
+Porting/docs-team-charter.pod	Perl Documentation Team charter
 Porting/epigraphs.pod		the release epigraphs used over the years
 Porting/exec-bit.txt		List of files that get +x in release tarball
 Porting/exercise_makedef.pl	Brute force testing for makedef.pl
@@ -5385,7 +5393,6 @@ Porting/Maintainers.pl		Information about maintainers
 Porting/Maintainers.pm		Library to pretty print info in Maintainers.pl
 Porting/make-rmg-checklist	Generates a checklist 4 the release manager
 Porting/make_dot_patch.pl	Make a .patch file from a git WD
-Porting/make_modlib_cpan.pl	Generates the list of CPAN sites in perlmodlib
 Porting/make_snapshot.pl	Make a tgz snapshot of our tree with a .patch file in it
 Porting/makemeta		Create the top-level META.yml
 Porting/makerel			Release making utility

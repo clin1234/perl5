@@ -636,6 +636,7 @@ ApdR	|SV**	|av_fetch	|NN AV *av|SSize_t key|I32 lval
 Apd	|void	|av_fill	|NN AV *av|SSize_t fill
 ApdR	|SSize_t|av_len		|NN AV *av
 ApdR	|AV*	|av_make	|SSize_t size|NN SV **strp
+ApdR	|AV*	|av_new_alloc	|SSize_t size|bool zeroflag
 p	|SV*	|av_nonelem	|NN AV *av|SSize_t ix
 Apd	|SV*	|av_pop		|NN AV *av
 Apdoex	|void	|av_create_and_push|NN AV **const avp|NN SV *const val
@@ -699,7 +700,7 @@ fTpre	|void	|noperl_die|NN const char* pat|...
 #if defined(WIN32)
 Tore	|void	|win32_croak_not_implemented|NN const char * fname
 #endif
-#if defined(PERL_IMPLICIT_CONTEXT)
+#if defined(MULTIPLICITY)
 AdfTrp	|void	|croak_nocontext|NULLOK const char* pat|...
 AdfTrp	|OP*    |die_nocontext  |NULLOK const char* pat|...
 AfTp	|void	|deb_nocontext	|NN const char* pat|...
@@ -1330,6 +1331,7 @@ p	|int	|magic_setnkeys	|NN SV* sv|NN MAGIC* mg
 p	|int	|magic_setpack	|NN SV* sv|NN MAGIC* mg
 p	|int	|magic_setpos	|NN SV* sv|NN MAGIC* mg
 p	|int	|magic_setregexp|NN SV* sv|NN MAGIC* mg
+p	|int	|magic_setsigall|NN SV* sv|NN MAGIC* mg
 p	|int	|magic_setsig	|NULLOK SV* sv|NN MAGIC* mg
 p	|int	|magic_setsubstr|NN SV* sv|NN MAGIC* mg
 p	|int	|magic_settaint	|NN SV* sv|NN MAGIC* mg
@@ -1459,6 +1461,8 @@ Apx	|CV *	|newXS_flags	|NULLOK const char *name|NN XSUBADDR_t subaddr\
 ApdU	|CV*	|newXS		|NULLOK const char *name|NN XSUBADDR_t subaddr\
 				|NN const char *filename
 ApMdbR	|AV*	|newAV
+AmdR	|AV*	|newAV_alloc_x  |SSize_t size
+AmdR	|AV*	|newAV_alloc_xz |SSize_t size
 ApR	|OP*	|newAVREF	|NN OP* o
 ApdR	|OP*	|newBINOP	|I32 type|I32 flags|NULLOK OP* first|NULLOK OP* last
 ApR	|OP*	|newCVREF	|I32 flags|NULLOK OP* o
@@ -1727,7 +1731,7 @@ Apd	|OP*	|op_contextualize|NN OP* o|I32 context
 p	|OP*	|scalar		|NULLOK OP* o
 #if defined(PERL_IN_OP_C)
 S	|OP*	|scalarkids	|NULLOK OP* o
-S	|OP*	|scalarseq	|NULLOK OP* o
+S	|OP*	|voidnonfinal	|NULLOK OP* o
 #endif
 : Used in pp_ctl.c
 p	|OP*	|scalarvoid	|NN OP* o
@@ -2035,6 +2039,16 @@ ES	|regnode_offset|regclass|NN RExC_state_t *pRExC_state                 \
 				|const bool strict                            \
 				|bool optimizable			      \
 				|NULLOK SV** ret_invlist
+ES	|U8|optimize_regclass	|NN RExC_state_t *pRExC_state		    \
+				|NULLOK SV* cp_list			    \
+				|NULLOK SV* only_utf8_locale_list	    \
+				|NULLOK SV* upper_latin1_only_utf8_matches  \
+				|const U32 has_runtime_dependency	    \
+				|const U32 posixl			    \
+				|NN U8 * anyof_flags			    \
+				|NN bool * invert			    \
+				|NN regnode_offset * ret		    \
+				|NN I32 *flagp
 ES	|SV *	|parse_uniprop_string|NN const char * const name	    \
 				     |Size_t name_len			    \
 				     |const bool is_utf8		    \
@@ -3095,7 +3109,7 @@ S	|int	|sv_2iuv_non_preserve	|NN SV *const sv
 SR	|STRLEN	|expect_number	|NN const char **const pattern
 ST	|STRLEN	|sv_pos_u2b_forwards|NN const U8 *const start \
 		|NN const U8 *const send|NN STRLEN *const uoffset \
-		|NN bool *const at_end
+		|NN bool *const at_end|NN bool *canonical_position
 ST	|STRLEN	|sv_pos_u2b_midway|NN const U8 *const start \
 		|NN const U8 *send|STRLEN uoffset|const STRLEN uend
 S	|STRLEN	|sv_pos_u2b_cached|NN SV *const sv|NN MAGIC **const mgp \
@@ -3524,7 +3538,7 @@ pTd	|bool|quadmath_format_needed|NN const char* format
 : Used in mg.c, sv.c
 pe	|void	|my_clearenv
 
-#ifdef PERL_IMPLICIT_CONTEXT
+#ifdef MULTIPLICITY
 Apo	|void*	|my_cxt_init	|NN int *indexp|size_t size
 #endif
 #if defined(PERL_IN_UTIL_C)

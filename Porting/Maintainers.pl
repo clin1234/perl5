@@ -320,7 +320,7 @@ use File::Glob qw(:case);
     },
 
     'Data::Dumper' => {
-        'DISTRIBUTION' => 'XSAWYERX/Data-Dumper-2.173.tar.gz',
+        'DISTRIBUTION' => 'NWCLARK/Data-Dumper-2.181.tar.gz',
         'FILES'        => q[dist/Data-Dumper],
     },
 
@@ -407,7 +407,7 @@ use File::Glob qw(:case);
     },
 
     'experimental' => {
-        'DISTRIBUTION' => 'LEONT/experimental-0.022.tar.gz',
+        'DISTRIBUTION' => 'LEONT/experimental-0.024.tar.gz',
         'FILES'        => q[cpan/experimental],
         'EXCLUDED'     => [qr{^xt/}],
     },
@@ -804,7 +804,7 @@ use File::Glob qw(:case);
     },
 
     'Module::CoreList' => {
-        'DISTRIBUTION' => 'BINGOS/Module-CoreList-5.20210420.tar.gz',
+        'DISTRIBUTION' => 'BINGOS/Module-CoreList-5.20210620.tar.gz',
         'FILES'        => q[dist/Module-CoreList],
     },
 
@@ -896,7 +896,7 @@ use File::Glob qw(:case);
     },
 
     'perlfaq' => {
-        'DISTRIBUTION' => 'ETHER/perlfaq-5.20210411.tar.gz',
+        'DISTRIBUTION' => 'ETHER/perlfaq-5.20210520.tar.gz',
         'FILES'        => q[cpan/perlfaq],
         'EXCLUDED'     => [ qr/^inc/, qr/^xt/, qr{^t/00-} ],
     },
@@ -978,7 +978,7 @@ use File::Glob qw(:case);
     },
 
     'Scalar::Util' => {
-        'DISTRIBUTION' => 'PEVANS/Scalar-List-Utils-1.55.tar.gz',
+        'DISTRIBUTION' => 'PEVANS/Scalar-List-Utils-1.56.tar.gz',
         'FILES'        => q[cpan/Scalar-List-Utils],
     },
 
@@ -994,7 +994,7 @@ use File::Glob qw(:case);
     },
 
     'Socket' => {
-        'DISTRIBUTION' => 'PEVANS/Socket-2.031.tar.gz',
+        'DISTRIBUTION' => 'PEVANS/Socket-2.032.tar.gz',
         'FILES'        => q[cpan/Socket],
     },
 
@@ -1080,7 +1080,7 @@ use File::Glob qw(:case);
     },
 
     'Test::Simple' => {
-        'DISTRIBUTION' => 'EXODIST/Test-Simple-1.302183.tar.gz',
+        'DISTRIBUTION' => 'EXODIST/Test-Simple-1.302185.tar.gz',
         'FILES'        => q[cpan/Test-Simple],
         'EXCLUDED'     => [
             qr{^examples/},
@@ -1223,7 +1223,7 @@ use File::Glob qw(:case);
     },
 
     'Unicode::Collate' => {
-        'DISTRIBUTION' => 'SADAHIRO/Unicode-Collate-1.29.tar.gz',
+        'DISTRIBUTION' => 'SADAHIRO/Unicode-Collate-1.30.tar.gz',
         'FILES'        => q[cpan/Unicode-Collate],
         'EXCLUDED'     => [
             qr{N$},
@@ -1249,7 +1249,7 @@ use File::Glob qw(:case);
     },
 
     'version' => {
-        'DISTRIBUTION' => 'LEONT/version-0.9928.tar.gz',
+        'DISTRIBUTION' => 'LEONT/version-0.9929.tar.gz',
         'FILES'        => q[cpan/version vutil.c vutil.h vxs.inc],
         'EXCLUDED' => [
             qr{^vutil/lib/},
@@ -1265,11 +1265,7 @@ use File::Glob qw(:case);
         # to delete an entire block out of lib/version.pm, since that code is
         # only necessary with the CPAN release.
         'CUSTOMIZED'   => [
-            qw( lib/version.pm
-                vutil.c
-                vxs.inc
-                ),
-        ],
+         ],
 
         'MAP' => {
             'vutil/'         => '',

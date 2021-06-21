@@ -220,17 +220,24 @@ Perl_pad_new(pTHX_ int flags)
 
     Newxz(padlist, 1, PADLIST);
     pad		= newAV();
+    Newxz(AvALLOC(pad), 4, SV *); /* Originally sized to
+                                     match av_extend default */
+    AvARRAY(pad) = AvALLOC(pad);
+    AvMAX(pad) = 3;
+    AvFILLp(pad) = 0; /* @_ or NULL, set below. */
 
     if (flags & padnew_CLONE) {
         AV * const a0 = newAV();			/* will be @_ */
-        av_store(pad, 0, MUTABLE_SV(a0));
+        AvARRAY(pad)[0] = MUTABLE_SV(a0);
         AvREIFY_only(a0);
 
         PadnamelistREFCNT(padname = PL_comppad_name)++;
     }
     else {
         padlist->xpadl_id = PL_padlist_generation++;
-        av_store(pad, 0, NULL);
+        /* Set implicitly through use of Newxz above
+            AvARRAY(pad)[0] = NULL;
+        */
         padname = newPADNAMELIST(0);
         padnamelist_store(padname, 0, &PL_padname_undef);
     }
@@ -2396,7 +2403,12 @@ Perl_pad_push(pTHX_ PADLIST *padlist, int depth)
         PADNAME ** const names = PadnamelistARRAY((PADNAMELIST *)svp[0]);
         AV *av;
 
+        Newxz( AvALLOC(newpad), ix + 1, SV *);
+        AvARRAY(newpad) = AvALLOC(newpad);
+        AvMAX(newpad) = AvFILLp(newpad) = ix;
+
         for ( ;ix > 0; ix--) {
+            SV *sv;
             if (names_fill >= ix && PadnameLEN(names[ix])) {
                 const char sigil = PadnamePV(names[ix])[0];
                 if (PadnameOUTER(names[ix])
@@ -2404,31 +2416,29 @@ Perl_pad_push(pTHX_ PADLIST *padlist, int depth)
                         || sigil == '&')
                 {
                     /* outer lexical or anon code */
-                    av_store(newpad, ix, SvREFCNT_inc(oldpad[ix]));
+                    sv = SvREFCNT_inc(oldpad[ix]);
                 }
                 else {		/* our own lexical */
-                    SV *sv; 
                     if (sigil == '@')
                         sv = MUTABLE_SV(newAV());
                     else if (sigil == '%')
                         sv = MUTABLE_SV(newHV());
                     else
                         sv = newSV(0);
-                    av_store(newpad, ix, sv);
                 }
             }
             else if (PadnamePV(names[ix])) {
-                av_store(newpad, ix, SvREFCNT_inc_NN(oldpad[ix]));
+                sv = SvREFCNT_inc_NN(oldpad[ix]);
             }
             else {
                 /* save temporaries on recursion? */
-                SV * const sv = newSV(0);
-                av_store(newpad, ix, sv);
+                sv = newSV(0);
                 SvPADTMP_on(sv);
             }
+            AvARRAY(newpad)[ix] = sv;
         }
         av = newAV();
-        av_store(newpad, 0, MUTABLE_SV(av));
+        AvARRAY(newpad)[0] = MUTABLE_SV(av);
         AvREIFY_only(av);
 
         padlist_store(padlist, depth, newpad);

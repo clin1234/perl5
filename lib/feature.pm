@@ -5,7 +5,7 @@
 
 package feature;
 
-our $VERSION = '1.64';
+our $VERSION = '1.66';
 
 our %feature = (
     fc                   => 'feature_fc',
@@ -58,6 +58,8 @@ $feature_bundle{"5.31"} = $feature_bundle{"5.27"};
 $feature_bundle{"5.32"} = $feature_bundle{"5.27"};
 $feature_bundle{"5.33"} = $feature_bundle{"5.27"};
 $feature_bundle{"5.34"} = $feature_bundle{"5.27"};
+$feature_bundle{"5.35"} = $feature_bundle{"5.27"};
+$feature_bundle{"5.36"} = $feature_bundle{"5.27"};
 $feature_bundle{"5.9.5"} = $feature_bundle{"5.10"};
 my %noops = (
     postderef => 1,
@@ -209,8 +211,8 @@ couldn't be changed without breaking some things that had come to rely on
 them, so the feature can be enabled and disabled.  Details are at
 L<perlfunc/Under the "unicode_eval" feature>.
 
-C<evalbytes> is like string C<eval>, but operating on a byte stream that is
-not UTF-8 encoded.  Details are at L<perlfunc/evalbytes EXPR>.  Without a
+C<evalbytes> is like string C<eval>, but it treats its argument as a byte
+string. Details are at L<perlfunc/evalbytes EXPR>.  Without a
 S<C<use feature 'evalbytes'>> nor a S<C<use v5.16>> (or higher) declaration in
 the current scope, you can still access it by instead writing
 C<CORE::evalbytes>.
@@ -497,6 +499,11 @@ The following feature bundles are available:
             unicode_strings
 
   :5.34     bareword_filehandles bitwise current_sub
+            evalbytes fc indirect multidimensional
+            postderef_qq say state switch unicode_eval
+            unicode_strings
+
+  :5.36     bareword_filehandles bitwise current_sub
             evalbytes fc indirect multidimensional
             postderef_qq say state switch unicode_eval
             unicode_strings

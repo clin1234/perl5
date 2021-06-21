@@ -7,7 +7,7 @@
 #	Windows SDK 64-bit compiler and tools
 #
 # This is set up to build a perl.exe that runs off a shared library
-# (perl534.dll).  Also makes individual DLLs for the XS extensions.
+# (perl535.dll).  Also makes individual DLLs for the XS extensions.
 #
 # The easiest way to customize the build process is to use parameters like this:
 #
@@ -64,7 +64,7 @@ INST_TOP := $(INST_DRV)\perl
 # versioned installation can be obtained by setting INST_TOP above to a
 # path that includes an arbitrary version string.
 #
-#INST_VER	:= \5.34.0
+#INST_VER	:= \5.35.2
 
 #
 # Comment this out if you DON'T want your perl installation to have
@@ -232,7 +232,7 @@ DEFAULT_INC_EXCLUDES_DOT := define
 # set this to additionally provide a statically linked perl-static.exe.
 # Note that dynamic loading will not work with this perl, so you must
 # include required modules statically using the STATIC_EXT or ALL_STATIC
-# variables below. A static library perl534s.lib will also be created.
+# variables below. A static library perl535s.lib will also be created.
 # Ordinary perl.exe is not affected by this option.
 #
 #BUILD_STATIC	:= define
@@ -338,7 +338,7 @@ BUILDOPT	+= -DUSE_SITECUSTOMIZE
 endif
 
 ifneq ($(USE_MULTI),undef)
-BUILDOPT	+= -DPERL_IMPLICIT_CONTEXT
+BUILDOPT	+= -DMULTIPLICITY
 endif
 
 ifneq ($(USE_IMP_SYS),undef)
@@ -583,10 +583,11 @@ MINIBUILDOPT    += -D__USE_MINGW_ANSI_STDIO
 endif
 
 
-# If you are using GCC, 4.3 or later by default we add the -fwrapv option.
+# By default add -fwrapv, since we depend on 2's complement behaviour
+# for signed numbers.
 # See https://github.com/Perl/perl5/issues/13690
 #
-GCCWRAPV := $(shell if "$(GCCVER1)"=="4" (if "$(GCCVER2)" geq "3" echo define) else if "$(GCCVER1)" geq "5" (echo define))
+GCCWRAPV := define
 
 ifeq ($(GCCWRAPV),define)
 BUILDOPT        += -fwrapv
@@ -1022,9 +1023,9 @@ ifeq ($(CCTYPE),GCC)
 
 CFGSH_TMPL	= config.gc
 CFGH_TMPL	= config_H.gc
-PERLIMPLIB	= $(COREDIR)\libperl534$(a)
-PERLIMPLIBBASE	= libperl534$(a)
-PERLSTATICLIB	= ..\libperl534s$(a)
+PERLIMPLIB	= $(COREDIR)\libperl535$(a)
+PERLIMPLIBBASE	= libperl535$(a)
+PERLSTATICLIB	= ..\libperl535s$(a)
 INT64		= long long
 
 else
@@ -1037,12 +1038,12 @@ endif
 
 # makedef.pl must be updated if this changes, and this should normally
 # only change when there is an incompatible revision of the public API.
-PERLIMPLIB	?= $(COREDIR)\perl534$(a)
-PERLIMPLIBBASE	?= perl534$(a)
-PERLEXPLIB	?= $(COREDIR)\perl534.exp
-PERLSTATICLIB	?= ..\perl534s$(a)
-PERLDLL		= ..\perl534.dll
-PERLDLLBASE	= perl534.dll
+PERLIMPLIB	?= $(COREDIR)\perl535$(a)
+PERLIMPLIBBASE	?= perl535$(a)
+PERLEXPLIB	?= $(COREDIR)\perl535.exp
+PERLSTATICLIB	?= ..\perl535s$(a)
+PERLDLL		= ..\perl535.dll
+PERLDLLBASE	= perl535.dll
 
 # don't let "gmake -n all" try to run "miniperl.exe make_ext.pl"
 PLMAKE		= gmake
@@ -1780,7 +1781,7 @@ utils: $(HAVEMINIPERL) ..\utils\Makefile
 	copy ..\README.tw       ..\pod\perltw.pod
 	copy ..\README.vos      ..\pod\perlvos.pod
 	copy ..\README.win32    ..\pod\perlwin32.pod
-	copy ..\pod\perldelta.pod ..\pod\perl5340delta.pod
+	copy ..\pod\perldelta.pod ..\pod\perl5352delta.pod
 	$(MINIPERL) -I..\lib $(PL2BAT) $(UTILS)
 	$(MINIPERL) -I..\lib ..\autodoc.pl ..
 	$(MINIPERL) -I..\lib ..\pod\perlmodlib.PL -q ..
@@ -1878,7 +1879,7 @@ distclean: realclean
 	-if exist $(LIBDIR)\Win32API rmdir /s /q $(LIBDIR)\Win32API
 	-if exist $(LIBDIR)\XS rmdir /s /q $(LIBDIR)\XS
 	-cd $(PODDIR) && del /f *.html *.bat roffitall \
-	    perl5340delta.pod perlaix.pod perlamiga.pod perlandroid.pod \
+	    perl5352delta.pod perlaix.pod perlamiga.pod perlandroid.pod \
 	    perlapi.pod perlbs2000.pod perlcn.pod perlcygwin.pod \
 	    perldos.pod perlfreebsd.pod perlhaiku.pod perlhpux.pod \
 	    perlhurd.pod perlintern.pod perlirix.pod perljp.pod perlko.pod \

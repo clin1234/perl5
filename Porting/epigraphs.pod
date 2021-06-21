@@ -17,6 +17,49 @@ Consult your favorite dictionary for details.
 
 =head1 EPIGRAPHS
 
+=head2 v5.35.1 - Sam Schube
+
+L<Announced on 2021-06-20 by Max Maischein|https://www.nntp.perl.org/group/perl.perl5.porters/2021/06/msg260592.html>
+
+His first marriage ended. A new relationship with an old friend
+straightened him out. “I realized that I can't live like I was and be
+with Naomi,” he said. “I wanted to become a better man for her. At
+first. Then it was for myself too.” He started seeing a therapist. There
+were limits: He told her he wasn't interested in exploring the part of
+him that wanted to do stunts. “I know that needs looking at,” he said.
+“But I didn't want to break the machine.”
+
+It wasn't just about jeopardizing his livelihood, he explained. Doing
+stunts “was exciting. It's something that I did with my friends. And I
+was decent at it.” It wasn't so much about the stunts themselves, which
+were terrifying, as about how completing them made him feel. He loved,
+he said, “the exhilaration and relief, once you get on the other side of
+the stunt. Or when you come to. You wake up, you're like, ‘Oh, was that
+good?’ And they're like, ‘That was great.’ You got a good bit when
+there's seven people standing over you, snapping their fingers.” When we
+spoke, he still hadn't broached the topic in therapy. “I'll talk about
+it eventually,” he said. “It's not something I need to know this second.”
+
+=head2 v5.35.0 - Miguel de Unamuno
+
+L<Announced on 2021-05-20 by Ricardo Signes|https://www.nntp.perl.org/group/perl.perl5.porters/2021/05/msg260116.html>
+
+We should try to be the parents of our future rather than the offspring of our
+past.
+
+=head2 v5.34.0 - Aberjhani
+
+L<Announced on 2021-05-20 by Sawyer X|https://www.nntp.perl.org/group/perl.perl5.porters/2021/05/msg260110.html>
+
+Our greatest power as nations and individuals is not the ability to employ assault weapons, suicide bombers, and drones to destroy each other.
+The greater more creative powers with which we may arm ourselves are grace and compassion sufficient enough to love and save each other.
+
+=head2 v5.34.0-RC2 - Nelson Mandela, The Long Walk to Freedom
+
+L<Announced on 2021-05-15 by Sawyer X|https://www.nntp.perl.org/group/perl.perl5.porters/2021/05/msg260066.html>
+
+No one is born hating another person because of the color of his skin, or his background, or his religion. People must learn to hate, and if they can learn to hate, they can be taught to love, for love comes more naturally to the human heart than its opposite.
+
 =head2 v5.34.0-RC1 - Paul Tremblay, The Cabin at the End of the World
 
 L<Announced on 2021-05-04 by Sawyer X|https://www.nntp.perl.org/group/perl.perl5.porters/2021/05/msg260029.html>

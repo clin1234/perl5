@@ -660,7 +660,8 @@ Perl_variant_byte_number(PERL_UINTMAX_T word)
                         |           (55 <<   8) |           (63 <<   0));
     word >>= PERL_WORDSIZE * 7; /* >> by either 56 or 24 */
 
-    /* Here, word contains the position 7..63 of that bit.  Convert to 0..7 */
+    /* Here, word contains the position 7,15,23,...,63 of that bit.  Convert to
+     * 0..7 */
     word = ((word + 1) >> 3) - 1;
 
 #  if BYTEORDER == 0x4321 || BYTEORDER == 0x87654321
@@ -1140,7 +1141,7 @@ Perl_isUTF8_CHAR(const U8 * const s0, const U8 * const e)
 
 #if defined(UV_IS_QUAD) || defined(EBCDIC)
 
-    if (NATIVE_UTF8_TO_I8(*s0) == 0xFF && e - s0 >= UTF8_MAXBYTES) {
+    if (e - s0 >= UTF8_MAXBYTES && NATIVE_UTF8_TO_I8(*s0) == 0xFF) {
        return is_utf8_char_helper(s0, e, 0);
     }
 

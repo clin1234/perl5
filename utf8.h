@@ -450,11 +450,16 @@ uppercase/lowercase/titlecase/fold into.
 
 /* This defines the 1-bits that are to be in the first byte of a multi-byte
  * UTF-8 encoded character that mark it as a start byte and give the number of
- * bytes that comprise the character. 'len' is the number of bytes in the
- * multi-byte sequence. */
-#define UTF_START_MARK(len) (UNLIKELY((len) >  7)           \
-                            ? 0xFF                          \
-                            : ((U8) (0xFE << (7-(len)))))
+ * bytes that comprise the character. 'len' is that number.
+ *
+ * To illustrate: len = 2 => ((U8) ~ 0b0011_1111) or 1100_0000
+ *                      7 => ((U8) ~ 0b0000_0001) or 1111_1110
+ *                    > 7 =>  0xFF
+ *
+ * This is not to be used on a single-byte character.  As in many places in
+ * perl, U8 must be 8 bits
+ */
+#define UTF_START_MARK(len) ((U8) ~(0xFF >> (len)))
 
 /* Masks out the initial one bits in a start byte, leaving the real data ones.
  * Doesn't work on an invariant byte.  'len' is the number of bytes in the
@@ -474,8 +479,8 @@ uppercase/lowercase/titlecase/fold into.
 
 /* This works in the face of malformed UTF-8. */
 #define UTF8_IS_NEXT_CHAR_DOWNGRADEABLE(s, e)                                 \
-                                       (   UTF8_IS_DOWNGRADEABLE_START(*(s))  \
-                                        && ( (e) - (s) > 1)                   \
+                                       (   ( (e) - (s) > 1)                   \
+                                        && UTF8_IS_DOWNGRADEABLE_START(*(s))  \
                                         && UTF8_IS_CONTINUATION(*((s)+1)))
 
 /* Number of bytes a code point occupies in UTF-8. */
@@ -950,18 +955,17 @@ Evaluates to 0xFFFD, the code point of the Unicode REPLACEMENT CHARACTER
 #define UNICODE_ALLOW_SUPER	0
 #define UNICODE_ALLOW_ANY	0
 
-/* This matches the 2048 code points between UNICODE_SURROGATE_FIRST (0xD800) and
- * UNICODE_SURROGATE_LAST (0xDFFF) */
-#define UNICODE_IS_SURROGATE(uv)  UNLIKELY(((UV) (uv) & (~0xFFFF | 0xF800))     \
-                                                                    == 0xD800)
+/* This matches the 2048 code points between these */
+#define UNICODE_IS_SURROGATE(uv) UNLIKELY(inRANGE(uv, UNICODE_SURROGATE_FIRST,  \
+                                                      UNICODE_SURROGATE_LAST))
 
 #define UNICODE_IS_REPLACEMENT(uv)  UNLIKELY((UV) (uv) == UNICODE_REPLACEMENT)
 #define UNICODE_IS_BYTE_ORDER_MARK(uv)	UNLIKELY((UV) (uv)                      \
                                                     == UNICODE_BYTE_ORDER_MARK)
 
 /* Is 'uv' one of the 32 contiguous-range noncharacters? */
-#define UNICODE_IS_32_CONTIGUOUS_NONCHARS(uv)   UNLIKELY((UV) (uv) >= 0xFDD0    \
-                                                      && (UV) (uv) <= 0xFDEF)
+#define UNICODE_IS_32_CONTIGUOUS_NONCHARS(uv)                               \
+                                    UNLIKELY(inRANGE(uv, 0xFDD0, 0xFDEF))
 
 /* Is 'uv' one of the 34 plane-ending noncharacters 0xFFFE, 0xFFFF, 0x1FFFE,
  * 0x1FFFF, ... 0x10FFFE, 0x10FFFF, given that we know that 'uv' is not above
@@ -970,9 +974,9 @@ Evaluates to 0xFFFD, the code point of the Unicode REPLACEMENT CHARACTER
                                       UNLIKELY(((UV) (uv) & 0xFFFE) == 0xFFFE)
 
 #define UNICODE_IS_NONCHAR(uv)                                                  \
-    (   UNICODE_IS_32_CONTIGUOUS_NONCHARS(uv)                                   \
-     || (   LIKELY( ! UNICODE_IS_SUPER(uv))                                     \
-         && UNICODE_IS_END_PLANE_NONCHAR_GIVEN_NOT_SUPER(uv)))
+    (       UNLIKELY(UNICODE_IS_32_CONTIGUOUS_NONCHARS(uv))                     \
+     || (   UNLIKELY(UNICODE_IS_END_PLANE_NONCHAR_GIVEN_NOT_SUPER(uv))          \
+         && LIKELY(! UNICODE_IS_SUPER(uv))))
 
 #define UNICODE_IS_SUPER(uv)    UNLIKELY((UV) (uv) > PERL_UNICODE_MAX)
 

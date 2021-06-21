@@ -78,6 +78,7 @@ my %feature_bundle = (
     "5.29"  => [ +V5_27 ],
     "5.31"  => [ +V5_27 ],
     "5.33"  => [ +V5_27 ],
+    "5.35"  => [ +V5_27 ],
 );
 
 my @noops = qw( postderef lexical_subs );
@@ -478,7 +479,7 @@ read_only_bottom_close_and_rename($h);
 __END__
 package feature;
 
-our $VERSION = '1.64';
+our $VERSION = '1.66';
 
 FEATURES
 
@@ -615,8 +616,8 @@ couldn't be changed without breaking some things that had come to rely on
 them, so the feature can be enabled and disabled.  Details are at
 L<perlfunc/Under the "unicode_eval" feature>.
 
-C<evalbytes> is like string C<eval>, but operating on a byte stream that is
-not UTF-8 encoded.  Details are at L<perlfunc/evalbytes EXPR>.  Without a
+C<evalbytes> is like string C<eval>, but it treats its argument as a byte
+string. Details are at L<perlfunc/evalbytes EXPR>.  Without a
 S<C<use feature 'evalbytes'>> nor a S<C<use v5.16>> (or higher) declaration in
 the current scope, you can still access it by instead writing
 C<CORE::evalbytes>.
