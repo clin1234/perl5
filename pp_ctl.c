@@ -3585,7 +3585,7 @@ PP(pp_goto)
                     : 1;
             if (enterops[i])
                 deprecate_fatal_in(WARN_DEPRECATED__GOTO_CONSTRUCT,
-                        "5.42",
+                        "42",
                         "Use of \"goto\" to jump into a construct");
         }
 
