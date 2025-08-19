@@ -3557,7 +3557,51 @@ to be rewritten more cleanly as:
 
 =head3 The ATTRS: Keyword
 
-XXX TBC
+    MODULE = Foo::Bar PACKAGE = Foo::Bar
+
+    SV*
+    debug()
+      ATTRS: lvalue
+      PPCODE:
+        # return $Foo::Bar::DEBUG, creating it if not already present:
+        PUSHs(GvSV(gv_fetchpvs("Foo::Bar::DEBUG", GV_ADD, SVt_IV)));
+
+    # Using it from Perl:
+    use Foo::Bar;
+    Foo::Bar::debug() = 99;
+    print "$Foo::Bar::DEBUG\n"; # prints 99
+
+The C<ATTRS> keyword allows you to apply subroutine attributes to an XSUB
+in a similar fashion to Perl subroutines. The XSUB in the example above is
+equivalent to this Perl:
+
+    sub debug :lvalue { return $Foo::Bar::DEBUG }
+
+This keyword consumes all lines until the next keyword. The contents of
+each line are interpreted as space-separated attributes. The attributes
+are applied at the time the XS module is loaded. This:
+
+    void
+    foo(...)
+      ATTRS: aaa
+             bbb(x,y) ccc
+
+is approximately equivalent to:
+
+    use attributes Foo::Bar, \&foo, 'aaa';
+    use attributes Foo::Bar, \&foo, 'bbb(x,y)';
+    use attributes Foo::Bar, \&foo, 'ccc';
+
+Currently the parsing of white-space is crude: C<bbb(x, y)> is
+misinterpreted as two separate attributes, C<"bbb(x,"> and C<"y)">.
+
+Note that not all built-in subroutine attributes necessarily make sense
+applied to XSUBs. User-defined attributes will, just like with Perl subs,
+trigger a call to C<MODIFY_CODE_ATTRIBUTES()>, as described in
+L<attributes>.
+
+The C<ATTR> keyword can't currently be used in conjunction with C<ALIAS>
+or C<INTERFACE>; in this case, the attributes are just silently ignored.
 
 =head2 Sharing XSUB bodies
 
