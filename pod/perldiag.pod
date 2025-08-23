@@ -7826,6 +7826,10 @@ valid for UTF-8 locales, which the current locale isn't.  This doesn't
 make sense.  Perl will continue, assuming a Unicode (UTF-8) locale, but
 the results are likely to be wrong.
 
+=item Use of goto to jump into a construct is no longer permitted
+
+(F) More TO COME.
+
 =item Use of freed value in iteration
 
 (F) Perhaps you modified the iterated array within the loop?

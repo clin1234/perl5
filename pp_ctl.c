@@ -3652,7 +3652,7 @@ PP(pp_goto)
                     ? 2
                     : 1;
             if (enterops[i])
-                croak("Use of \"goto\" to jump into a construct is no longer permitted");
+                croak("Use of goto to jump into a construct is no longer permitted");
         }
 
         /* pop unwanted frames */

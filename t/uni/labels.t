@@ -86,6 +86,6 @@ is $d, 0, "Latin-1 labels are reachable";
         }
     };
     like($@,
-        qr/Use of \"goto\" to jump into a construct is no longer permitted/,
+        qr/Use of goto to jump into a construct is no longer permitted/,
         "Got expected error message");
 }
