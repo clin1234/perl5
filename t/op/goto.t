@@ -12,14 +12,15 @@ BEGIN {
 use warnings;
 use strict;
 use Config;
-plan tests => 134;
+#plan tests => 134;
+plan tests => 109;
 our $TODO;
 
-my $deprecated = 0;
+my $fatalized = 0;
 
-local $SIG{__WARN__} = sub {
-    if ($_[0] =~ m/jump into a construct.*?, and will become fatal in Perl 5\.42/) {
-        $deprecated++;
+local $SIG{__DIE__} = sub {
+    if ($_[0] =~ m/jump into a construct is no longer permitted/) {
+        $fatalized++;
     }
     else { warn $_[0] }
 };
@@ -28,28 +29,28 @@ our $foo;
 while ($?) {
     $foo = 1;
   label1:
-    is($deprecated, 1, "following label1");
-    $deprecated = 0;
+    is($fatalized, 1, "following label1");
+    $fatalized = 0;
     $foo = 2;
     goto label2;
 } continue {
     $foo = 0;
     goto label4;
   label3:
-    is($deprecated, 1, "following label3");
-    $deprecated = 0;
+    is($fatalized, 1, "following label3");
+    $fatalized = 0;
     $foo = 4;
     goto label4;
 }
-is($deprecated, 0, "after 'while' loop");
-goto label1;
+is($fatalized, 0, "after 'while' loop");
+##goto label1;
 
 $foo = 3;
 
 label2:
 is($foo, 2, 'escape while loop');
-is($deprecated, 0, "following label2");
-goto label3;
+is($fatalized, 0, "following label2");
+##goto label3;
 
 label4:
 is($foo, 4, 'second escape while loop');
@@ -190,20 +191,20 @@ ok($ok, 'works correctly in a nested eval string');
     $ok = 0;
     sub a {
 	A: { if ($false) { redo A; B: $ok = 1; redo A; } }
-	goto B unless $count++;
+    #goto B unless $count++;
     }
-    is($deprecated, 0, "before calling sub a()");
+    is($fatalized, 0, "before calling sub a()");
     a();
     ok($ok, '#19061 loop label wiped away by goto');
-    is($deprecated, 1, "after calling sub a()");
-    $deprecated = 0;
+    is($fatalized, 1, "after calling sub a()");
+    $fatalized = 0;
 
     $ok = 0;
     my $p;
-    for ($p=1;$p && goto A;$p=0) { A: $ok = 1 }
+    #for ($p=1;$p && goto A;$p=0) { A: $ok = 1 }
     ok($ok, 'weird case of goto and for(;;) loop');
-    is($deprecated, 1, "following goto and for(;;) loop");
-    $deprecated = 0;
+    is($fatalized, 1, "following goto and for(;;) loop");
+    $fatalized = 0;
 }
 
 # bug #9990 - don't prematurely free the CV we're &going to.
@@ -617,7 +618,7 @@ TODO: {
     }
 }
 
-is($deprecated, 0, "following TODOed test for #43403");
+is($fatalized, 0, "following TODOed test for #43403");
 
 #74290
 {
@@ -822,54 +823,54 @@ is eval { join(":", sort revnumcmp (9,5,1,3,7)) }, "9:7:5:3:1",
 # A bit strange, but goingto these constructs should not cause any stack
 # problems.  Let’s test them to make sure that is the case.
 no warnings 'deprecated';
-is \sub :lvalue { goto d; ${*{scalar(do { d: \*foo })}} }->(), \$foo,
-   'goto into rv2sv, rv2gv and scalar';
-is sub { goto e; $#{; do { e: \@_ } } }->(1..7), 6,
-   'goto into $#{...}';
-is sub { goto f; prototype \&{; do { f: sub ($) {} } } }->(), '$',
-   'goto into srefgen, prototype and rv2cv';
-is sub { goto g; ref do { g: [] } }->(), 'ARRAY',
-   'goto into ref';
-is sub { goto j; defined undef ${; do { j: \(my $foo = "foo") } } }->(),'',
-   'goto into defined and undef';
-is sub { goto k; study ++${; do { k: \(my $foo = "foo") } } }->(),'1',
-   'goto into study and preincrement';
-is sub { goto l; ~-!${; do { l: \(my $foo = 0) } }++ }->(),~-1,
-   'goto into complement, not, negation and postincrement';
-like sub { goto n; sin cos exp log sqrt do { n: 1 } }->(),qr/^0\.51439/,
-   'goto into sin, cos, exp, log, and sqrt';
-ok sub { goto o; srand do { o: 0 } }->(),
-   'goto into srand';
-cmp_ok sub { goto p; rand do { p: 1 } }->(), '<', 1,
-   'goto into rand';
-is sub { goto r; chr ord length int hex oct abs do { r: -15.5 } }->(), 2,
-   'goto into chr, ord, length, int, hex, oct and abs';
-is sub { goto t; ucfirst lcfirst uc lc do { t: "q" } }->(), 'Q',
-   'goto into ucfirst, lcfirst, uc and lc';
+##is \sub :lvalue { goto d; ${*{scalar(do { d: \*foo })}} }->(), \$foo,
+##   'goto into rv2sv, rv2gv and scalar';
+##is sub { goto e; $#{; do { e: \@_ } } }->(1..7), 6,
+##   'goto into $#{...}';
+##is sub { goto f; prototype \&{; do { f: sub ($) {} } } }->(), '$',
+##   'goto into srefgen, prototype and rv2cv';
+##is sub { goto g; ref do { g: [] } }->(), 'ARRAY',
+##   'goto into ref';
+##is sub { goto j; defined undef ${; do { j: \(my $foo = "foo") } } }->(),'',
+##   'goto into defined and undef';
+##is sub { goto k; study ++${; do { k: \(my $foo = "foo") } } }->(),'1',
+##   'goto into study and preincrement';
+##is sub { goto l; ~-!${; do { l: \(my $foo = 0) } }++ }->(),~-1,
+##   'goto into complement, not, negation and postincrement';
+##like sub { goto n; sin cos exp log sqrt do { n: 1 } }->(),qr/^0\.51439/,
+##   'goto into sin, cos, exp, log, and sqrt';
+##ok sub { goto o; srand do { o: 0 } }->(),
+##   'goto into srand';
+##cmp_ok sub { goto p; rand do { p: 1 } }->(), '<', 1,
+##   'goto into rand';
+##is sub { goto r; chr ord length int hex oct abs do { r: -15.5 } }->(), 2,
+##   'goto into chr, ord, length, int, hex, oct and abs';
+##is sub { goto t; ucfirst lcfirst uc lc do { t: "q" } }->(), 'Q',
+##   'goto into ucfirst, lcfirst, uc and lc';
 { no strict;
-  is sub { goto u; \@{; quotemeta do { u: "." } } }->(), \@{'\.'},
-   'goto into rv2av and quotemeta';
+##  is sub { goto u; \@{; quotemeta do { u: "." } } }->(), \@{'\.'},
+##   'goto into rv2av and quotemeta';
 }
-is join(" ",sub { goto v; %{; do { v: +{1..2} } } }->()), '1 2',
-   'goto into rv2hv';
-is join(" ",sub { goto w; $_ || do { w: "w" } }->()), 'w',
-   'goto into rhs of or';
-is join(" ",sub { goto x; $_ && do { x: "w" } }->()), 'w',
-   'goto into rhs of and';
-is join(" ",sub { goto z; $_ ? do { z: "w" } : 0 }->()), 'w',
-   'goto into first leg of ?:';
-is join(" ",sub { goto z; $_ ? 0 : do { z: "w" } }->()), 'w',
-   'goto into second leg of ?:';
-is sub { goto z; caller do { z: 0 } }->(), 'main',
-   'goto into caller';
-is sub { goto z; exit do { z: return "foo" } }->(), 'foo',
-   'goto into exit';
-is sub { goto z; eval do { z: "'foo'" } }->(), 'foo',
-   'goto into eval';
+##is join(" ",sub { goto v; %{; do { v: +{1..2} } } }->()), '1 2',
+##   'goto into rv2hv';
+##is join(" ",sub { goto w; $_ || do { w: "w" } }->()), 'w',
+##   'goto into rhs of or';
+##is join(" ",sub { goto x; $_ && do { x: "w" } }->()), 'w',
+##   'goto into rhs of and';
+##is join(" ",sub { goto z; $_ ? do { z: "w" } : 0 }->()), 'w',
+##   'goto into first leg of ?:';
+##is join(" ",sub { goto z; $_ ? 0 : do { z: "w" } }->()), 'w',
+##   'goto into second leg of ?:';
+##is sub { goto z; caller do { z: 0 } }->(), 'main',
+##   'goto into caller';
+##is sub { goto z; exit do { z: return "foo" } }->(), 'foo',
+##   'goto into exit';
+##is sub { goto z; eval do { z: "'foo'" } }->(), 'foo',
+##   'goto into eval';
 TODO: {
     local $TODO = "glob() does not currently return a list on VMS" if $^O eq 'VMS';
-    is join(",",sub { goto z; glob do { z: "foo bar" } }->()), 'foo,bar',
-       'goto into glob';
+##    is join(",",sub { goto z; glob do { z: "foo bar" } }->()), 'foo,bar',
+##       'goto into glob';
 }
 # [perl #132799]
 # Erroneous inward goto warning, followed by crash.
@@ -880,8 +881,8 @@ sub _routine {
       L2:
     }
 }
-_routine();
-pass("bug 132799");
+##_routine();
+##pass("bug 132799");
 
 # [perl #132854]
 # Goto the *first* parameter of a binary expression, which is harmless.
